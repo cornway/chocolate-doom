@@ -235,8 +235,10 @@ boolean D_Display (void)
     I_UpdateNoBlit ();
     
     // draw the view directly
-    if (gamestate == GS_LEVEL && !automapactive && gametic)
-	R_RenderPlayerView (&players[displayplayer]);
+    if (gamestate == GS_LEVEL && !automapactive && gametic) {
+        players[displayplayer].view = &view;
+        R_RenderPlayerView (&players[displayplayer]);
+    }
 
     if (gamestate == GS_LEVEL && gametic)
 	HU_Drawer ();

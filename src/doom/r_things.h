@@ -48,12 +48,12 @@ void R_DrawMaskedColumn (column_t* column);
 
 void R_SortVisSprites (void);
 
-void R_AddSprites (sector_t* sec);
+void R_AddSprites (view_t *view, sector_t* sec);
 void R_AddPSprites (void);
 void R_DrawSprites (void);
 void R_InitSprites(const char **namelist);
 void R_ClearSprites (void);
-void R_DrawMasked (void);
+void R_DrawMasked (view_t *view);
 
 void
 R_ClipVisSprite

@@ -41,23 +41,25 @@ extern fixed_t		yslope[SCREENHEIGHT];
 extern fixed_t		distscale[SCREENWIDTH];
 
 void R_InitPlanes (void);
-void R_ClearPlanes (void);
+void R_ClearPlanes (view_t *view);
 
 void
 R_MapPlane
-( int		y,
+( view_t *view,
+  int		y,
   int		x1,
   int		x2 );
 
 void
 R_MakeSpans
-( int		x,
+( view_t *view,
+  int		x,
   int		t1,
   int		b1,
   int		t2,
   int		b2 );
 
-void R_DrawPlanes (void);
+void R_DrawPlanes (view_t *view);
 
 visplane_t*
 R_FindPlane

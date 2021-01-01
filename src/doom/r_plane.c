@@ -113,7 +113,8 @@ void R_InitPlanes (void)
 //
 void
 R_MapPlane
-( int		y,
+( view_t *view,
+  int		y,
   int		x1,
   int		x2 )
 {
@@ -147,9 +148,9 @@ R_MapPlane
     }
 	
     length = FixedMul (distance,distscale[x1]);
-    angle = (view.ax + xtoviewangle[x1])>>ANGLETOFINESHIFT;
-    ds_xfrac = view.x + FixedMul(finecosine[angle], length);
-    ds_yfrac = -view.y - FixedMul(finesine[angle], length);
+    angle = (view->ax + xtoviewangle[x1])>>ANGLETOFINESHIFT;
+    ds_xfrac = view->x + FixedMul(finecosine[angle], length);
+    ds_yfrac = -view->y - FixedMul(finesine[angle], length);
 
     if (fixedcolormap)
 	ds_colormap = fixedcolormap;
@@ -176,7 +177,7 @@ R_MapPlane
 // R_ClearPlanes
 // At begining of frame.
 //
-void R_ClearPlanes (void)
+void R_ClearPlanes (view_t *view)
 {
     int		i;
     angle_t	angle;
@@ -195,7 +196,7 @@ void R_ClearPlanes (void)
     memset (cachedheight, 0, sizeof(cachedheight));
 
     // left to right mapping
-    angle = (view.ax-ANG90)>>ANGLETOFINESHIFT;
+    angle = (view->ax-ANG90)>>ANGLETOFINESHIFT;
 	
     // scale will be unit scale at SCREENWIDTH/2 distance
     basexscale = FixedDiv (finecosine[angle],centerxfrac);
@@ -326,7 +327,8 @@ R_CheckPlane
 //
 void
 R_MakeSpans
-( int		x,
+( view_t *view,
+  int		x,
   int		t1,
   int		b1,
   int		t2,
@@ -334,12 +336,12 @@ R_MakeSpans
 {
     while (t1 < t2 && t1<=b1)
     {
-	R_MapPlane (t1,spanstart[t1],x-1);
+	R_MapPlane (view, t1,spanstart[t1],x-1);
 	t1++;
     }
     while (b1 > b2 && b1>=t1)
     {
-	R_MapPlane (b1,spanstart[b1],x-1);
+	R_MapPlane (view, b1,spanstart[b1],x-1);
 	b1--;
     }
 	
@@ -361,7 +363,7 @@ R_MakeSpans
 // R_DrawPlanes
 // At the end of each frame.
 //
-void R_DrawPlanes (void)
+void R_DrawPlanes (view_t *view)
 {
     visplane_t*		pl;
     int			light;
@@ -408,7 +410,7 @@ void R_DrawPlanes (void)
 
 		if (dc_yl <= dc_yh)
 		{
-		    angle = (view.ax + xtoviewangle[x])>>ANGLETOSKYSHIFT;
+		    angle = (view->ax + xtoviewangle[x])>>ANGLETOSKYSHIFT;
 		    dc_x = x;
 		    dc_source = R_GetColumn(skytexture, angle);
 		    colfunc ();
@@ -421,7 +423,7 @@ void R_DrawPlanes (void)
         lumpnum = firstflat + flattranslation[pl->picnum];
 	ds_source = W_CacheLumpNum(lumpnum, PU_STATIC);
 	
-	planeheight = abs(pl->height-view.z);
+	planeheight = abs(pl->height-view->z);
 	light = (pl->lightlevel >> LIGHTSEGSHIFT)+extralight;
 
 	if (light >= LIGHTLEVELS)
@@ -439,7 +441,7 @@ void R_DrawPlanes (void)
 
 	for (x=pl->minx ; x<= stop ; x++)
 	{
-	    R_MakeSpans(x,pl->top[x-1],
+	    R_MakeSpans(view, x,pl->top[x-1],
 			pl->bottom[x-1],
 			pl->top[x],
 			pl->bottom[x]);

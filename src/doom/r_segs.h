@@ -25,7 +25,8 @@
 
 void
 R_RenderMaskedSegRange
-( drawseg_t*	ds,
+( view_t *view,
+  drawseg_t*	ds,
   int		x1,
   int		x2 );
 

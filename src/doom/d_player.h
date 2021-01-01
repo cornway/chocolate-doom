@@ -71,6 +71,7 @@ typedef enum
 
 } cheat_t;
 
+struct view_s;
 
 //
 // Extended player object info: player_t
@@ -158,6 +159,7 @@ typedef struct player_s
     // True if secret level has been done.
     boolean		didsecret;	
 
+    struct view_s *view;
 } player_t;
 
 

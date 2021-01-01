@@ -442,7 +442,7 @@ R_DrawVisSprite
 // Generates a vissprite for a thing
 //  if it might be visible.
 //
-void R_ProjectSprite (mobj_t* thing)
+void R_ProjectSprite (view_t *view, mobj_t* thing)
 {
     fixed_t		tr_x;
     fixed_t		tr_y;
@@ -473,11 +473,11 @@ void R_ProjectSprite (mobj_t* thing)
     fixed_t		iscale;
     
     // transform the origin point
-    tr_x = thing->x - view.x;
-    tr_y = thing->y - view.y;
+    tr_x = thing->x - view->x;
+    tr_y = thing->y - view->y;
 	
-    gxt = FixedMul(tr_x,view.axcos);
-    gyt = -FixedMul(tr_y,view.axsin);
+    gxt = FixedMul(tr_x,view->axcos);
+    gyt = -FixedMul(tr_y,view->axsin);
     
     tz = gxt-gyt; 
 
@@ -487,8 +487,8 @@ void R_ProjectSprite (mobj_t* thing)
     
     xscale = FixedDiv(projection, tz);
 	
-    gxt = -FixedMul(tr_x,view.axsin); 
-    gyt = FixedMul(tr_y,view.axcos); 
+    gxt = -FixedMul(tr_x,view->axsin); 
+    gyt = FixedMul(tr_y,view->axcos); 
     tx = -(gyt+gxt); 
 
     // too far off the side?
@@ -512,7 +512,7 @@ void R_ProjectSprite (mobj_t* thing)
     if (sprframe->rotate)
     {
 	// choose a different rotation based on player view
-	ang = R_PointToAngle (thing->x, thing->y);
+	ang = R_PointToAngle (view->x, view->y, thing->x, thing->y);
 	rot = (ang-thing->angle+(unsigned)(ANG45/2)*9)>>29;
 	lump = sprframe->lump[rot];
 	flip = (boolean)sprframe->flip[rot];
@@ -547,7 +547,7 @@ void R_ProjectSprite (mobj_t* thing)
     vis->gy = thing->y;
     vis->gz = thing->z;
     vis->gzt = thing->z + spritetopoffset[lump];
-    vis->texturemid = vis->gzt - view.z;
+    vis->texturemid = vis->gzt - view->z;
     vis->x1 = x1 < 0 ? 0 : x1;
     vis->x2 = x2 >= viewwidth ? viewwidth-1 : x2;	
     iscale = FixedDiv (FRACUNIT, xscale);
@@ -603,7 +603,7 @@ void R_ProjectSprite (mobj_t* thing)
 // R_AddSprites
 // During BSP traversal, this adds sprites by sector.
 //
-void R_AddSprites (sector_t* sec)
+void R_AddSprites (view_t *view, sector_t* sec)
 {
     mobj_t*		thing;
     int			lightnum;
@@ -629,14 +629,14 @@ void R_AddSprites (sector_t* sec)
 
     // Handle all things in sector.
     for (thing = sec->thinglist ; thing ; thing = thing->snext)
-	R_ProjectSprite (thing);
+	R_ProjectSprite (view, thing);
 }
 
 
 //
 // R_DrawPSprite
 //
-void R_DrawPSprite (pspdef_t* psp)
+void R_DrawPSprite (player_t *player, pspdef_t* psp)
 {
     fixed_t		tx;
     int			x1;
@@ -706,8 +706,8 @@ void R_DrawPSprite (pspdef_t* psp)
 
     vis->patch = lump;
 
-    if (view.player->powers[pw_invisibility] > 4*32
-	|| view.player->powers[pw_invisibility] & 8)
+    if (player->powers[pw_invisibility] > 4*32
+	|| player->powers[pw_invisibility] & 8)
     {
 	// shadow draw
 	vis->colormap = NULL;
@@ -736,7 +736,7 @@ void R_DrawPSprite (pspdef_t* psp)
 //
 // R_DrawPlayerSprites
 //
-void R_DrawPlayerSprites (void)
+void R_DrawPlayerSprites (view_t *view)
 {
     int		i;
     int		lightnum;
@@ -744,7 +744,7 @@ void R_DrawPlayerSprites (void)
     
     // get light level
     lightnum =
-	(view.player->mo->subsector->sector->lightlevel >> LIGHTSEGSHIFT) 
+	(view->player->mo->subsector->sector->lightlevel >> LIGHTSEGSHIFT) 
 	+extralight;
 
     if (lightnum < 0)		
@@ -759,12 +759,12 @@ void R_DrawPlayerSprites (void)
     mceilingclip = negonearray;
     
     // add all active psprites
-    for (i=0, psp=view.player->psprites;
+    for (i=0, psp=view->player->psprites;
 	 i<NUMPSPRITES;
 	 i++,psp++)
     {
 	if (psp->state)
-	    R_DrawPSprite (psp);
+	    R_DrawPSprite (view->player, psp);
     }
 }
 
@@ -833,7 +833,7 @@ void R_SortVisSprites (void)
 //
 // R_DrawSprite
 //
-void R_DrawSprite (vissprite_t* spr)
+void R_DrawSprite (view_t *view, vissprite_t* spr)
 {
     drawseg_t*		ds;
     short		clipbot[SCREENWIDTH];
@@ -883,7 +883,7 @@ void R_DrawSprite (vissprite_t* spr)
 	{
 	    // masked mid texture?
 	    if (ds->maskedtexturecol)	
-		R_RenderMaskedSegRange (ds, r1, r2);
+		R_RenderMaskedSegRange (view, ds, r1, r2);
 	    // seg is behind sprite
 	    continue;			
 	}
@@ -949,7 +949,7 @@ void R_DrawSprite (vissprite_t* spr)
 //
 // R_DrawMasked
 //
-void R_DrawMasked (void)
+void R_DrawMasked (view_t *view)
 {
     vissprite_t*	spr;
     drawseg_t*		ds;
@@ -964,19 +964,19 @@ void R_DrawMasked (void)
 	     spr=spr->next)
 	{
 	    
-	    R_DrawSprite (spr);
+	    R_DrawSprite (view, spr);
 	}
     }
     
     // render any remaining masked mid textures
     for (ds=ds_p-1 ; ds >= drawsegs ; ds--)
 	if (ds->maskedtexturecol)
-	    R_RenderMaskedSegRange (ds, ds->x1, ds->x2);
+	    R_RenderMaskedSegRange (view, ds, ds->x1, ds->x2);
     
     // draw the psprites on top of everything
     //  but does not draw on side views
     if (!viewangleoffset)		
-	R_DrawPlayerSprites ();
+	R_DrawPlayerSprites (view);
 }
 
 

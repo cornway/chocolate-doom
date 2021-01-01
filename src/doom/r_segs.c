@@ -95,7 +95,8 @@ short*		maskedtexturecol;
 //
 void
 R_RenderMaskedSegRange
-( drawseg_t*	ds,
+( view_t *view,
+  drawseg_t*	ds,
   int		x1,
   int		x2 )
 {
@@ -139,13 +140,13 @@ R_RenderMaskedSegRange
     {
 	dc_texturemid = frontsector->floorheight > backsector->floorheight
 	    ? frontsector->floorheight : backsector->floorheight;
-	dc_texturemid = dc_texturemid + textureheight[texnum] - view.z;
+	dc_texturemid = dc_texturemid + textureheight[texnum] - view->z;
     }
     else
     {
 	dc_texturemid =frontsector->ceilingheight<backsector->ceilingheight
 	    ? frontsector->ceilingheight : backsector->ceilingheight;
-	dc_texturemid = dc_texturemid - view.z;
+	dc_texturemid = dc_texturemid - view->z;
     }
     dc_texturemid += curline->sidedef->rowoffset;
 			
@@ -371,7 +372,8 @@ void R_RenderSegLoop (void)
 //
 void
 R_StoreWallRange
-( int	start,
+( view_t *view,
+  int	start,
   int	stop )
 {
     fixed_t		hyp;
@@ -403,7 +405,7 @@ R_StoreWallRange
 	offsetangle = ANG90;
 
     distangle = ANG90 - offsetangle;
-    hyp = R_PointToDist (curline->v1->x, curline->v1->y);
+    hyp = R_PointToDist (view->x, view->y, curline->v1->x, curline->v1->y);
     sineval = finesine[distangle>>ANGLETOFINESHIFT];
     rw_distance = FixedMul (hyp, sineval);
 		
@@ -415,11 +417,11 @@ R_StoreWallRange
     
     // calculate scale at both ends and step
     ds_p->scale1 = rw_scale = 
-	R_ScaleFromGlobalAngle (view.ax + xtoviewangle[start]);
+	R_ScaleFromGlobalAngle (view->ax, view->ax + xtoviewangle[start]);
     
     if (stop > start )
     {
-	ds_p->scale2 = R_ScaleFromGlobalAngle (view.ax + xtoviewangle[stop]);
+	ds_p->scale2 = R_ScaleFromGlobalAngle (view->ax, view->ax + xtoviewangle[stop]);
 	ds_p->scalestep = rw_scalestep = 
 	    (ds_p->scale2 - rw_scale) / (stop-start);
     }
@@ -445,8 +447,8 @@ R_StoreWallRange
     
     // calculate texture boundaries
     //  and decide if floor / ceiling marks are needed
-    worldtop = frontsector->ceilingheight - view.z;
-    worldbottom = frontsector->floorheight - view.z;
+    worldtop = frontsector->ceilingheight - view->z;
+    worldbottom = frontsector->floorheight - view->z;
 	
     midtexture = toptexture = bottomtexture = maskedtexture = 0;
     ds_p->maskedtexturecol = NULL;
@@ -462,7 +464,7 @@ R_StoreWallRange
 	    vtop = frontsector->floorheight +
 		textureheight[sidedef->midtexture];
 	    // bottom of texture at bottom
-	    rw_midtexturemid = vtop - view.z;	
+	    rw_midtexturemid = vtop - view->z;
 	}
 	else
 	{
@@ -488,7 +490,7 @@ R_StoreWallRange
 	    ds_p->silhouette = SIL_BOTTOM;
 	    ds_p->bsilheight = frontsector->floorheight;
 	}
-	else if (backsector->floorheight > view.z)
+	else if (backsector->floorheight > view->z)
 	{
 	    ds_p->silhouette = SIL_BOTTOM;
 	    ds_p->bsilheight = INT_MAX;
@@ -500,7 +502,7 @@ R_StoreWallRange
 	    ds_p->silhouette |= SIL_TOP;
 	    ds_p->tsilheight = frontsector->ceilingheight;
 	}
-	else if (backsector->ceilingheight < view.z)
+	else if (backsector->ceilingheight < view->z)
 	{
 	    ds_p->silhouette |= SIL_TOP;
 	    ds_p->tsilheight = INT_MIN;
@@ -521,8 +523,8 @@ R_StoreWallRange
 	    ds_p->silhouette |= SIL_TOP;
 	}
 	
-	worldhigh = backsector->ceilingheight - view.z;
-	worldlow = backsector->floorheight - view.z;
+	worldhigh = backsector->ceilingheight - view->z;
+	worldlow = backsector->floorheight - view->z;
 		
 	// hack to allow height changes in outdoor areas
 	if (frontsector->ceilingpic == skyflatnum 
@@ -581,7 +583,7 @@ R_StoreWallRange
 		    + textureheight[sidedef->toptexture];
 		
 		// bottom of texture
-		rw_toptexturemid = vtop - view.z;	
+		rw_toptexturemid = vtop - view->z;
 	    }
 	}
 	if (worldlow > worldbottom)
@@ -631,7 +633,7 @@ R_StoreWallRange
 	    rw_offset = -rw_offset;
 
 	rw_offset += sidedef->textureoffset + curline->offset;
-	rw_centerangle = ANG90 + view.ax - rw_normalangle;
+	rw_centerangle = ANG90 + view->ax - rw_normalangle;
 	
 	// calculate light table
 	//  use different light tables
@@ -660,13 +662,13 @@ R_StoreWallRange
     //  and doesn't need to be marked.
     
   
-    if (frontsector->floorheight >= view.z)
+    if (frontsector->floorheight >= view->z)
     {
 	// above view plane
 	markfloor = false;
     }
     
-    if (frontsector->ceilingheight <= view.z 
+    if (frontsector->ceilingheight <= view->z
 	&& frontsector->ceilingpic != skyflatnum)
     {
 	// below view plane

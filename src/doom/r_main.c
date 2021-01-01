@@ -262,12 +262,14 @@ R_PointOnSegSide
 
 angle_t
 R_PointToAngle
-( fixed_t	x,
+( fixed_t	x1,
+  fixed_t	y1,
+  fixed_t	x,
   fixed_t	y )
 {	
-    x -= view.x;
-    y -= view.y;
-    
+    x -= x1;
+    y -= y1;
+
     if ( (!x) && (!y) )
 	return 0;
 
@@ -352,17 +354,16 @@ R_PointToAngle2
   fixed_t	y1,
   fixed_t	x2,
   fixed_t	y2 )
-{	
-    view.x = x1;
-    view.y = y1;
-    
-    return R_PointToAngle (x2, y2);
+{
+    return R_PointToAngle (x1, y1, x2, y2);
 }
 
 
 fixed_t
 R_PointToDist
-( fixed_t	x,
+( fixed_t	x1,
+  fixed_t	y1,
+  fixed_t	x,
   fixed_t	y )
 {
     int		angle;
@@ -372,8 +373,8 @@ R_PointToDist
     fixed_t	dist;
     fixed_t     frac;
 	
-    dx = abs(x - view.x);
-    dy = abs(y - view.y);
+    dx = abs(x - x1);
+    dy = abs(y - y1);
 	
     if (dy>dx)
     {
@@ -434,7 +435,7 @@ void R_InitPointToAngle (void)
 //  at the given angle.
 // rw_distance must be calculated first.
 //
-fixed_t R_ScaleFromGlobalAngle (angle_t visangle)
+fixed_t R_ScaleFromGlobalAngle (angle_t ax, angle_t visangle)
 {
     fixed_t		scale;
     angle_t		anglea;
@@ -461,7 +462,7 @@ fixed_t R_ScaleFromGlobalAngle (angle_t visangle)
 }
 #endif
 
-    anglea = ANG90 + (visangle-view.ax);
+    anglea = ANG90 + (visangle-ax);
     angleb = ANG90 + (visangle-rw_normalangle);
 
     // both sines are allways positive
@@ -811,19 +812,20 @@ R_PointInSubsector
 void R_SetupFrame (player_t* player)
 {		
     int		i;
-    
-    view.player = player;
+    view_t *view = player->view;
 
-    view.x = player->mo->x;
-    view.y = player->mo->y;
-    view.z = player->viewz;
+    view->player = player;
 
-    view.ax = player->mo->angle + viewangleoffset;
+    view->x = player->mo->x;
+    view->y = player->mo->y;
+    view->z = player->viewz;
+
+    view->ax = player->mo->angle + viewangleoffset;
     extralight = player->extralight;
 
 
-    view.axsin = finesine[view.ax>>ANGLETOFINESHIFT];
-    view.axcos = finecosine[view.ax>>ANGLETOFINESHIFT];
+    view->axsin = finesine[view->ax>>ANGLETOFINESHIFT];
+    view->axcos = finecosine[view->ax>>ANGLETOFINESHIFT];
 	
     sscount = 0;
 	
@@ -857,24 +859,24 @@ void R_RenderPlayerView (player_t* player)
     // Clear buffers.
     R_ClearClipSegs ();
     R_ClearDrawSegs ();
-    R_ClearPlanes ();
+    R_ClearPlanes (player->view);
     R_ClearSprites ();
     
     // check for new console commands.
     NetUpdate ();
 
     // The head node is the last node output.
-    R_RenderBSPNode (numnodes-1);
+    R_RenderBSPNode (numnodes-1, player->view);
     
     // Check for new console commands.
     NetUpdate ();
     
-    R_DrawPlanes ();
+    R_DrawPlanes (player->view);
     
     // Check for new console commands.
     NetUpdate ();
-    
-    R_DrawMasked ();
+
+    R_DrawMasked (player->view);
 
     // Check for new console commands.
     NetUpdate ();				
