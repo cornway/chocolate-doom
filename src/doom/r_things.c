@@ -32,6 +32,7 @@
 #include "w_wad.h"
 
 #include "r_local.h"
+#include "r_view.h"
 
 #include "doomstat.h"
 
@@ -472,11 +473,11 @@ void R_ProjectSprite (mobj_t* thing)
     fixed_t		iscale;
     
     // transform the origin point
-    tr_x = thing->x - viewx;
-    tr_y = thing->y - viewy;
+    tr_x = thing->x - view.x;
+    tr_y = thing->y - view.y;
 	
-    gxt = FixedMul(tr_x,viewcos); 
-    gyt = -FixedMul(tr_y,viewsin);
+    gxt = FixedMul(tr_x,view.axcos);
+    gyt = -FixedMul(tr_y,view.axsin);
     
     tz = gxt-gyt; 
 
@@ -486,8 +487,8 @@ void R_ProjectSprite (mobj_t* thing)
     
     xscale = FixedDiv(projection, tz);
 	
-    gxt = -FixedMul(tr_x,viewsin); 
-    gyt = FixedMul(tr_y,viewcos); 
+    gxt = -FixedMul(tr_x,view.axsin); 
+    gyt = FixedMul(tr_y,view.axcos); 
     tx = -(gyt+gxt); 
 
     // too far off the side?
@@ -546,7 +547,7 @@ void R_ProjectSprite (mobj_t* thing)
     vis->gy = thing->y;
     vis->gz = thing->z;
     vis->gzt = thing->z + spritetopoffset[lump];
-    vis->texturemid = vis->gzt - viewz;
+    vis->texturemid = vis->gzt - view.z;
     vis->x1 = x1 < 0 ? 0 : x1;
     vis->x2 = x2 >= viewwidth ? viewwidth-1 : x2;	
     iscale = FixedDiv (FRACUNIT, xscale);
@@ -705,8 +706,8 @@ void R_DrawPSprite (pspdef_t* psp)
 
     vis->patch = lump;
 
-    if (viewplayer->powers[pw_invisibility] > 4*32
-	|| viewplayer->powers[pw_invisibility] & 8)
+    if (view.player->powers[pw_invisibility] > 4*32
+	|| view.player->powers[pw_invisibility] & 8)
     {
 	// shadow draw
 	vis->colormap = NULL;
@@ -743,7 +744,7 @@ void R_DrawPlayerSprites (void)
     
     // get light level
     lightnum =
-	(viewplayer->mo->subsector->sector->lightlevel >> LIGHTSEGSHIFT) 
+	(view.player->mo->subsector->sector->lightlevel >> LIGHTSEGSHIFT) 
 	+extralight;
 
     if (lightnum < 0)		
@@ -758,7 +759,7 @@ void R_DrawPlayerSprites (void)
     mceilingclip = negonearray;
     
     // add all active psprites
-    for (i=0, psp=viewplayer->psprites;
+    for (i=0, psp=view.player->psprites;
 	 i<NUMPSPRITES;
 	 i++,psp++)
     {

@@ -34,8 +34,7 @@
 
 #include "r_local.h"
 #include "r_sky.h"
-
-
+#include "r_view.h"
 
 
 
@@ -66,17 +65,6 @@ int			framecount;
 int			sscount;
 int			linecount;
 int			loopcount;
-
-fixed_t			viewx;
-fixed_t			viewy;
-fixed_t			viewz;
-
-angle_t			viewangle;
-
-fixed_t			viewcos;
-fixed_t			viewsin;
-
-player_t*		viewplayer;
 
 // 0 = high, 1 = low
 int			detailshift;	
@@ -277,8 +265,8 @@ R_PointToAngle
 ( fixed_t	x,
   fixed_t	y )
 {	
-    x -= viewx;
-    y -= viewy;
+    x -= view.x;
+    y -= view.y;
     
     if ( (!x) && (!y) )
 	return 0;
@@ -365,8 +353,8 @@ R_PointToAngle2
   fixed_t	x2,
   fixed_t	y2 )
 {	
-    viewx = x1;
-    viewy = y1;
+    view.x = x1;
+    view.y = y1;
     
     return R_PointToAngle (x2, y2);
 }
@@ -384,8 +372,8 @@ R_PointToDist
     fixed_t	dist;
     fixed_t     frac;
 	
-    dx = abs(x - viewx);
-    dy = abs(y - viewy);
+    dx = abs(x - view.x);
+    dy = abs(y - view.y);
 	
     if (dy>dx)
     {
@@ -473,7 +461,7 @@ fixed_t R_ScaleFromGlobalAngle (angle_t visangle)
 }
 #endif
 
-    anglea = ANG90 + (visangle-viewangle);
+    anglea = ANG90 + (visangle-view.ax);
     angleb = ANG90 + (visangle-rw_normalangle);
 
     // both sines are allways positive
@@ -824,16 +812,18 @@ void R_SetupFrame (player_t* player)
 {		
     int		i;
     
-    viewplayer = player;
-    viewx = player->mo->x;
-    viewy = player->mo->y;
-    viewangle = player->mo->angle + viewangleoffset;
+    view.player = player;
+
+    view.x = player->mo->x;
+    view.y = player->mo->y;
+    view.z = player->viewz;
+
+    view.ax = player->mo->angle + viewangleoffset;
     extralight = player->extralight;
 
-    viewz = player->viewz;
-    
-    viewsin = finesine[viewangle>>ANGLETOFINESHIFT];
-    viewcos = finecosine[viewangle>>ANGLETOFINESHIFT];
+
+    view.axsin = finesine[view.ax>>ANGLETOFINESHIFT];
+    view.axcos = finecosine[view.ax>>ANGLETOFINESHIFT];
 	
     sscount = 0;
 	

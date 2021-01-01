@@ -90,18 +90,6 @@ extern line_t*		lines;
 extern int		numsides;
 extern side_t*		sides;
 
-
-//
-// POV data.
-//
-extern fixed_t		viewx;
-extern fixed_t		viewy;
-extern fixed_t		viewz;
-
-extern angle_t		viewangle;
-extern player_t*	viewplayer;
-
-
 // ?
 extern angle_t		clipangle;
 

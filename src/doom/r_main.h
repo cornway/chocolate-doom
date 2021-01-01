@@ -23,19 +23,8 @@
 #include "d_player.h"
 #include "r_data.h"
 
-
-
-
-//
-// POV related.
-//
-extern fixed_t		viewcos;
-extern fixed_t		viewsin;
-
 extern int		viewwindowx;
 extern int		viewwindowy;
-
-
 
 extern int		centerx;
 extern int		centery;

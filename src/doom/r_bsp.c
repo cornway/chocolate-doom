@@ -32,7 +32,7 @@
 // State.
 #include "doomstat.h"
 #include "r_state.h"
-
+#include "r_view.h"
 //#include "r_local.h"
 
 
@@ -280,8 +280,8 @@ void R_AddLine (seg_t*	line)
 
     // Global angle needed by segcalc.
     rw_angle1 = angle1;
-    angle1 -= viewangle;
-    angle2 -= viewangle;
+    angle1 -= view.ax;
+    angle2 -= view.ax;
 	
     tspan = angle1 + clipangle;
     if (tspan > 2*clipangle)
@@ -400,16 +400,16 @@ boolean R_CheckBBox (fixed_t*	bspcoord)
     
     // Find the corners of the box
     // that define the edges from current viewpoint.
-    if (viewx <= bspcoord[BOXLEFT])
+    if (view.x <= bspcoord[BOXLEFT])
 	boxx = 0;
-    else if (viewx < bspcoord[BOXRIGHT])
+    else if (view.x < bspcoord[BOXRIGHT])
 	boxx = 1;
     else
 	boxx = 2;
 		
-    if (viewy >= bspcoord[BOXTOP])
+    if (view.y >= bspcoord[BOXTOP])
 	boxy = 0;
-    else if (viewy > bspcoord[BOXBOTTOM])
+    else if (view.y > bspcoord[BOXBOTTOM])
 	boxy = 1;
     else
 	boxy = 2;
@@ -424,8 +424,8 @@ boolean R_CheckBBox (fixed_t*	bspcoord)
     y2 = bspcoord[checkcoord[boxpos][3]];
     
     // check clip list for an open space
-    angle1 = R_PointToAngle (x1, y1) - viewangle;
-    angle2 = R_PointToAngle (x2, y2) - viewangle;
+    angle1 = R_PointToAngle (x1, y1) - view.ax;
+    angle2 = R_PointToAngle (x2, y2) - view.ax;
 	
     span = angle1 - angle2;
 
@@ -512,7 +512,7 @@ void R_Subsector (int num)
     count = sub->numlines;
     line = &segs[sub->firstline];
 
-    if (frontsector->floorheight < viewz)
+    if (frontsector->floorheight < view.z)
     {
 	floorplane = R_FindPlane (frontsector->floorheight,
 				  frontsector->floorpic,
@@ -521,7 +521,7 @@ void R_Subsector (int num)
     else
 	floorplane = NULL;
     
-    if (frontsector->ceilingheight > viewz 
+    if (frontsector->ceilingheight > view.z 
 	|| frontsector->ceilingpic == skyflatnum)
     {
 	ceilingplane = R_FindPlane (frontsector->ceilingheight,
@@ -570,7 +570,7 @@ void R_RenderBSPNode (int bspnum)
     bsp = &nodes[bspnum];
     
     // Decide which side the view point is on.
-    side = R_PointOnSide (viewx, viewy, bsp);
+    side = R_PointOnSide (view.x, view.y, bsp);
 
     // Recursively divide front space.
     R_RenderBSPNode (bsp->children[side]); 

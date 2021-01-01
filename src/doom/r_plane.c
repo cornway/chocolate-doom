@@ -31,6 +31,7 @@
 
 #include "r_local.h"
 #include "r_sky.h"
+#include "r_view.h"
 
 
 
@@ -146,9 +147,9 @@ R_MapPlane
     }
 	
     length = FixedMul (distance,distscale[x1]);
-    angle = (viewangle + xtoviewangle[x1])>>ANGLETOFINESHIFT;
-    ds_xfrac = viewx + FixedMul(finecosine[angle], length);
-    ds_yfrac = -viewy - FixedMul(finesine[angle], length);
+    angle = (view.ax + xtoviewangle[x1])>>ANGLETOFINESHIFT;
+    ds_xfrac = view.x + FixedMul(finecosine[angle], length);
+    ds_yfrac = -view.y - FixedMul(finesine[angle], length);
 
     if (fixedcolormap)
 	ds_colormap = fixedcolormap;
@@ -194,7 +195,7 @@ void R_ClearPlanes (void)
     memset (cachedheight, 0, sizeof(cachedheight));
 
     // left to right mapping
-    angle = (viewangle-ANG90)>>ANGLETOFINESHIFT;
+    angle = (view.ax-ANG90)>>ANGLETOFINESHIFT;
 	
     // scale will be unit scale at SCREENWIDTH/2 distance
     basexscale = FixedDiv (finecosine[angle],centerxfrac);
@@ -407,7 +408,7 @@ void R_DrawPlanes (void)
 
 		if (dc_yl <= dc_yh)
 		{
-		    angle = (viewangle + xtoviewangle[x])>>ANGLETOSKYSHIFT;
+		    angle = (view.ax + xtoviewangle[x])>>ANGLETOSKYSHIFT;
 		    dc_x = x;
 		    dc_source = R_GetColumn(skytexture, angle);
 		    colfunc ();
@@ -420,7 +421,7 @@ void R_DrawPlanes (void)
         lumpnum = firstflat + flattranslation[pl->picnum];
 	ds_source = W_CacheLumpNum(lumpnum, PU_STATIC);
 	
-	planeheight = abs(pl->height-viewz);
+	planeheight = abs(pl->height-view.z);
 	light = (pl->lightlevel >> LIGHTSEGSHIFT)+extralight;
 
 	if (light >= LIGHTLEVELS)

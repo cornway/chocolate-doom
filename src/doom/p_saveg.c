@@ -648,7 +648,7 @@ static void saveg_read_player_t(player_t *str)
     // ticcmd_t cmd;
     saveg_read_ticcmd_t(&str->cmd);
 
-    // fixed_t viewz;
+    // fixed_t view.z;
     str->viewz = saveg_read32();
 
     // fixed_t viewheight;
@@ -779,7 +779,7 @@ static void saveg_write_player_t(player_t *str)
     // ticcmd_t cmd;
     saveg_write_ticcmd_t(&str->cmd);
 
-    // fixed_t viewz;
+    // fixed_t view.z;
     saveg_write32(str->viewz);
 
     // fixed_t viewheight;

@@ -31,6 +31,7 @@
 
 #include "r_local.h"
 #include "r_sky.h"
+#include "r_view.h"
 
 
 // OPTIMIZE: closed two sided lines as single sided
@@ -138,13 +139,13 @@ R_RenderMaskedSegRange
     {
 	dc_texturemid = frontsector->floorheight > backsector->floorheight
 	    ? frontsector->floorheight : backsector->floorheight;
-	dc_texturemid = dc_texturemid + textureheight[texnum] - viewz;
+	dc_texturemid = dc_texturemid + textureheight[texnum] - view.z;
     }
     else
     {
 	dc_texturemid =frontsector->ceilingheight<backsector->ceilingheight
 	    ? frontsector->ceilingheight : backsector->ceilingheight;
-	dc_texturemid = dc_texturemid - viewz;
+	dc_texturemid = dc_texturemid - view.z;
     }
     dc_texturemid += curline->sidedef->rowoffset;
 			
@@ -414,11 +415,11 @@ R_StoreWallRange
     
     // calculate scale at both ends and step
     ds_p->scale1 = rw_scale = 
-	R_ScaleFromGlobalAngle (viewangle + xtoviewangle[start]);
+	R_ScaleFromGlobalAngle (view.ax + xtoviewangle[start]);
     
     if (stop > start )
     {
-	ds_p->scale2 = R_ScaleFromGlobalAngle (viewangle + xtoviewangle[stop]);
+	ds_p->scale2 = R_ScaleFromGlobalAngle (view.ax + xtoviewangle[stop]);
 	ds_p->scalestep = rw_scalestep = 
 	    (ds_p->scale2 - rw_scale) / (stop-start);
     }
@@ -444,8 +445,8 @@ R_StoreWallRange
     
     // calculate texture boundaries
     //  and decide if floor / ceiling marks are needed
-    worldtop = frontsector->ceilingheight - viewz;
-    worldbottom = frontsector->floorheight - viewz;
+    worldtop = frontsector->ceilingheight - view.z;
+    worldbottom = frontsector->floorheight - view.z;
 	
     midtexture = toptexture = bottomtexture = maskedtexture = 0;
     ds_p->maskedtexturecol = NULL;
@@ -461,7 +462,7 @@ R_StoreWallRange
 	    vtop = frontsector->floorheight +
 		textureheight[sidedef->midtexture];
 	    // bottom of texture at bottom
-	    rw_midtexturemid = vtop - viewz;	
+	    rw_midtexturemid = vtop - view.z;	
 	}
 	else
 	{
@@ -487,7 +488,7 @@ R_StoreWallRange
 	    ds_p->silhouette = SIL_BOTTOM;
 	    ds_p->bsilheight = frontsector->floorheight;
 	}
-	else if (backsector->floorheight > viewz)
+	else if (backsector->floorheight > view.z)
 	{
 	    ds_p->silhouette = SIL_BOTTOM;
 	    ds_p->bsilheight = INT_MAX;
@@ -499,7 +500,7 @@ R_StoreWallRange
 	    ds_p->silhouette |= SIL_TOP;
 	    ds_p->tsilheight = frontsector->ceilingheight;
 	}
-	else if (backsector->ceilingheight < viewz)
+	else if (backsector->ceilingheight < view.z)
 	{
 	    ds_p->silhouette |= SIL_TOP;
 	    ds_p->tsilheight = INT_MIN;
@@ -520,8 +521,8 @@ R_StoreWallRange
 	    ds_p->silhouette |= SIL_TOP;
 	}
 	
-	worldhigh = backsector->ceilingheight - viewz;
-	worldlow = backsector->floorheight - viewz;
+	worldhigh = backsector->ceilingheight - view.z;
+	worldlow = backsector->floorheight - view.z;
 		
 	// hack to allow height changes in outdoor areas
 	if (frontsector->ceilingpic == skyflatnum 
@@ -580,7 +581,7 @@ R_StoreWallRange
 		    + textureheight[sidedef->toptexture];
 		
 		// bottom of texture
-		rw_toptexturemid = vtop - viewz;	
+		rw_toptexturemid = vtop - view.z;	
 	    }
 	}
 	if (worldlow > worldbottom)
@@ -630,7 +631,7 @@ R_StoreWallRange
 	    rw_offset = -rw_offset;
 
 	rw_offset += sidedef->textureoffset + curline->offset;
-	rw_centerangle = ANG90 + viewangle - rw_normalangle;
+	rw_centerangle = ANG90 + view.ax - rw_normalangle;
 	
 	// calculate light table
 	//  use different light tables
@@ -659,13 +660,13 @@ R_StoreWallRange
     //  and doesn't need to be marked.
     
   
-    if (frontsector->floorheight >= viewz)
+    if (frontsector->floorheight >= view.z)
     {
 	// above view plane
 	markfloor = false;
     }
     
-    if (frontsector->ceilingheight <= viewz 
+    if (frontsector->ceilingheight <= view.z 
 	&& frontsector->ceilingpic != skyflatnum)
     {
 	// below view plane
