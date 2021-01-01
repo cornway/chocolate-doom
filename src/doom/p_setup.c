@@ -54,6 +54,8 @@ vertex_t*	vertexes;
 
 int		numsegs;
 seg_t*		segs;
+seg_vis_t *segs_vis;
+
 
 int		numsectors;
 sector_t*	sectors;
@@ -183,10 +185,13 @@ void P_LoadSegs (int lump)
     int                 sidenum;
 	
     numsegs = W_LumpLength (lump) / sizeof(mapseg_t);
-    segs = Z_Malloc (numsegs*sizeof(seg_t),PU_LEVEL,0);	
+    segs = Z_Malloc (numsegs*sizeof(seg_t),PU_LEVEL,0);
     memset (segs, 0, numsegs*sizeof(seg_t));
+
+    segs_vis = Z_Malloc (numsegs*sizeof(seg_vis_t),PU_LEVEL,0);
+
     data = W_CacheLumpNum (lump,PU_STATIC);
-	
+
     ml = (mapseg_t *)data;
     li = segs;
     for (i=0 ; i<numsegs ; i++, li++, ml++)

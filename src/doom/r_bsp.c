@@ -254,7 +254,7 @@ void R_ClearClipSegs (void)
 // Clips the given segment
 // and adds any visible pieces to the line list.
 //
-void R_AddLine (view_t *view, seg_vis_t *line)
+boolean R_AddLine (view_t *view, seg_vis_t *line)
 {
     int     x1, x2;
     angle_t angle1, angle2;
@@ -271,7 +271,7 @@ void R_AddLine (view_t *view, seg_vis_t *line)
     
     // Back side? I.e. backface culling?
     if (span >= ANG180)
-        return;
+        return false;
 
     // Global angle needed by segcalc.
     line->angle = angle1;
@@ -285,7 +285,7 @@ void R_AddLine (view_t *view, seg_vis_t *line)
 
         // Totally off the left edge?
         if (tspan >= span)
-            return;
+            return false;
 
         angle1 = clipangle;
     }
@@ -296,7 +296,7 @@ void R_AddLine (view_t *view, seg_vis_t *line)
 
         // Totally off the left edge?
         if (tspan >= span)
-            return;
+            return false;
         angle2 = -clipangle;
     }
     
@@ -309,8 +309,10 @@ void R_AddLine (view_t *view, seg_vis_t *line)
 
     // Does not cross a pixel?
     if (x1 == x2)
-        return;
+        return false;
 
+    line->x1 = x1;
+    line->x2 = x2-1;
     backsector = line->seg->backsector;
     frontsector = line->seg->frontsector;
 
@@ -324,7 +326,7 @@ void R_AddLine (view_t *view, seg_vis_t *line)
 
     // Window.
     if (backsector->ceilingheight != frontsector->ceilingheight || backsector->floorheight != frontsector->floorheight)
-        goto clippass;	
+        goto clippass;
 
     // Reject empty lines used for triggers
     //  and special events.
@@ -336,17 +338,23 @@ void R_AddLine (view_t *view, seg_vis_t *line)
     && backsector->lightlevel == frontsector->lightlevel
     && line->seg->sidedef->midtexture == 0)
     {
-        return;
+        return false;
     }
     clippass:
-    line->x1 = x1;
-    line->x2 = x2-1;
-    R_ClipPassWallSegment (view, line);
-    return;
+    line->solid = false;
+    return true;
     clipsolid:
-    line->x1 = x1;
-    line->x2 = x2-1;
-    R_ClipSolidWallSegment (view, line);
+    line->solid = true;
+    return true;
+}
+
+void R_ProjectLine (view_t *view, seg_vis_t *seg)
+{
+    if (seg->solid) {
+        R_ClipSolidWallSegment (view, seg);
+     } else {
+         R_ClipPassWallSegment (view, seg);
+     }
 }
 
 //
@@ -501,7 +509,6 @@ void R_Subsector (view_t *view, int num)
     if (num>=numsubsectors)
         I_Error ("R_Subsector: ss %i with numss = %i", num, numsubsectors);
 #endif
-    sscount++;
     sub = &subsectors[num];
     frontsector = sub->sector;
     count = sub->numlines;
@@ -529,9 +536,11 @@ void R_Subsector (view_t *view, int num)
     while (count--)
     {
         vis->seg = line;
-        vis->floorplane = floorplane;
-        vis->ceilingplane = ceilingplane;
-        R_AddLine (view, vis);
+        if (R_AddLine (view, vis)) {
+            vis->floorplane = floorplane;
+            vis->ceilingplane = ceilingplane;
+            segs_vis[sscount++] = *vis;
+        }
         line++;
     }
 
@@ -541,7 +550,16 @@ void R_Subsector (view_t *view, int num)
 }
 
 
+void R_ProjectBSP (view_t *view, void (*h) (view_t *view, seg_vis_t *seg) )
+{
+    int count = sscount;
+    seg_vis_t *seg = segs_vis;
 
+    while (count--) {
+        h(view, seg);
+        seg++;
+    }
+}
 
 //
 // RenderBSPNode

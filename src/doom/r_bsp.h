@@ -51,6 +51,8 @@ void R_ClearDrawSegs (void);
 
 
 void R_RenderBSPNode (int bspnum, view_t *view);
+void R_ProjectBSP (view_t *view, void (*h) (view_t *view, seg_vis_t *seg) );
+void R_ProjectLine (view_t *view, seg_vis_t *seg);
 
 
 #endif

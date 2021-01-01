@@ -867,7 +867,8 @@ void R_RenderPlayerView (player_t* player)
 
     // The head node is the last node output.
     R_RenderBSPNode (numnodes-1, player->view);
-    
+    R_ProjectBSP(player->view, R_ProjectLine);
+
     // Check for new console commands.
     NetUpdate ();
     
