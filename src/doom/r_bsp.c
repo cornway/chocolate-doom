@@ -255,14 +255,11 @@ void R_ClearClipSegs (void)
 // Clips the given segment
 // and adds any visible pieces to the line list.
 //
-void R_AddLine (seg_t*	line)
+void R_AddLine (seg_t *line)
 {
-    int			x1;
-    int			x2;
-    angle_t		angle1;
-    angle_t		angle2;
-    angle_t		span;
-    angle_t		tspan;
+    int     x1, x2;
+    angle_t angle1, angle2;
+    angle_t span, tspan;
     
     curline = line;
 
@@ -276,33 +273,33 @@ void R_AddLine (seg_t*	line)
     
     // Back side? I.e. backface culling?
     if (span >= ANG180)
-	return;		
+        return;
 
     // Global angle needed by segcalc.
     rw_angle1 = angle1;
     angle1 -= view.ax;
     angle2 -= view.ax;
-	
+
     tspan = angle1 + clipangle;
     if (tspan > 2*clipangle)
     {
-	tspan -= 2*clipangle;
+        tspan -= 2*clipangle;
 
-	// Totally off the left edge?
-	if (tspan >= span)
-	    return;
-	
-	angle1 = clipangle;
+        // Totally off the left edge?
+        if (tspan >= span)
+            return;
+
+        angle1 = clipangle;
     }
     tspan = clipangle - angle2;
     if (tspan > 2*clipangle)
     {
-	tspan -= 2*clipangle;
+        tspan -= 2*clipangle;
 
-	// Totally off the left edge?
-	if (tspan >= span)
-	    return;	
-	angle2 = -clipangle;
+        // Totally off the left edge?
+        if (tspan >= span)
+            return;
+        angle2 = -clipangle;
     }
     
     // The seg is in the view range,
@@ -314,43 +311,38 @@ void R_AddLine (seg_t*	line)
 
     // Does not cross a pixel?
     if (x1 == x2)
-	return;				
-	
+        return;
+
     backsector = line->backsector;
 
     // Single sided line?
     if (!backsector)
-	goto clipsolid;		
+        goto clipsolid;
 
     // Closed door.
-    if (backsector->ceilingheight <= frontsector->floorheight
-	|| backsector->floorheight >= frontsector->ceilingheight)
-	goto clipsolid;		
+    if (backsector->ceilingheight <= frontsector->floorheight || backsector->floorheight >= frontsector->ceilingheight)
+        goto clipsolid;
 
     // Window.
-    if (backsector->ceilingheight != frontsector->ceilingheight
-	|| backsector->floorheight != frontsector->floorheight)
-	goto clippass;	
-		
+    if (backsector->ceilingheight != frontsector->ceilingheight || backsector->floorheight != frontsector->floorheight)
+        goto clippass;	
+
     // Reject empty lines used for triggers
     //  and special events.
     // Identical floor and ceiling on both sides,
     // identical light levels on both sides,
     // and no middle texture.
     if (backsector->ceilingpic == frontsector->ceilingpic
-	&& backsector->floorpic == frontsector->floorpic
-	&& backsector->lightlevel == frontsector->lightlevel
-	&& curline->sidedef->midtexture == 0)
+    && backsector->floorpic == frontsector->floorpic
+    && backsector->lightlevel == frontsector->lightlevel
+    && curline->sidedef->midtexture == 0)
     {
-	return;
+        return;
     }
-    
-				
-  clippass:
-    R_ClipPassWallSegment (x1, x2-1);	
+    clippass:
+    R_ClipPassWallSegment (x1, x2-1);
     return;
-		
-  clipsolid:
+    clipsolid:
     R_ClipSolidWallSegment (x1, x2-1);
 }
 
@@ -498,14 +490,11 @@ void R_Subsector (int num)
     int			count;
     seg_t*		line;
     subsector_t*	sub;
-	
+
 #ifdef RANGECHECK
     if (num>=numsubsectors)
-	I_Error ("R_Subsector: ss %i with numss = %i",
-		 num,
-		 numsubsectors);
+        I_Error ("R_Subsector: ss %i with numss = %i", num, numsubsectors);
 #endif
-
     sscount++;
     sub = &subsectors[num];
     frontsector = sub->sector;
@@ -514,29 +503,27 @@ void R_Subsector (int num)
 
     if (frontsector->floorheight < view.z)
     {
-	floorplane = R_FindPlane (frontsector->floorheight,
-				  frontsector->floorpic,
-				  frontsector->lightlevel);
+        floorplane = R_FindPlane (frontsector->floorheight,
+        frontsector->floorpic,
+        frontsector->lightlevel);
     }
     else
-	floorplane = NULL;
-    
-    if (frontsector->ceilingheight > view.z 
-	|| frontsector->ceilingpic == skyflatnum)
+        floorplane = NULL;
+
+    if (frontsector->ceilingheight > view.z
+        || frontsector->ceilingpic == skyflatnum)
     {
-	ceilingplane = R_FindPlane (frontsector->ceilingheight,
-				    frontsector->ceilingpic,
-				    frontsector->lightlevel);
+        ceilingplane = R_FindPlane (frontsector->ceilingheight, frontsector->ceilingpic, frontsector->lightlevel);
     }
     else
-	ceilingplane = NULL;
-		
+        ceilingplane = NULL;
+
     R_AddSprites (frontsector);	
 
     while (count--)
     {
-	R_AddLine (line);
-	line++;
+        R_AddLine (line);
+        line++;
     }
 
     // check for solidsegs overflow - extremely unsatisfactory!
