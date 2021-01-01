@@ -100,16 +100,7 @@ extern angle_t		xtoviewangle[SCREENWIDTH+1];
 extern fixed_t		rw_distance;
 extern angle_t		rw_normalangle;
 
-
-
-// angle to line origin
-extern int		rw_angle1;
-
 // Segs count?
 extern int		sscount;
-
-extern visplane_t*	floorplane;
-extern visplane_t*	ceilingplane;
-
 
 #endif

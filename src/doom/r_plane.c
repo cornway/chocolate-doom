@@ -46,8 +46,6 @@ planefunction_t		ceilingfunc;
 #define MAXVISPLANES	128
 visplane_t		visplanes[MAXVISPLANES];
 visplane_t*		lastvisplane;
-visplane_t*		floorplane;
-visplane_t*		ceilingplane;
 
 // ?
 #define MAXOPENINGS	SCREENWIDTH*64

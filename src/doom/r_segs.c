@@ -50,8 +50,6 @@ int		midtexture;
 
 
 angle_t		rw_normalangle;
-// angle to line origin
-int		rw_angle1;	
 
 //
 // regular wall
@@ -100,11 +98,13 @@ R_RenderMaskedSegRange
   int		x1,
   int		x2 )
 {
+    seg_t *curline;
     unsigned	index;
     column_t*	col;
     int		lightnum;
     int		texnum;
-    
+    sector_t *frontsector, *backsector;
+
     // Calculate light table.
     // Use different light tables
     //   for horizontal / vertical / diagonal. Diagonal?
@@ -198,7 +198,7 @@ R_RenderMaskedSegRange
 #define HEIGHTBITS		12
 #define HEIGHTUNIT		(1<<HEIGHTBITS)
 
-void R_RenderSegLoop (void)
+void R_RenderSegLoop (seg_vis_t *seg)
 {
     angle_t		angle;
     unsigned		index;
@@ -228,8 +228,8 @@ void R_RenderSegLoop (void)
 
 	    if (top <= bottom)
 	    {
-		ceilingplane->top[rw_x] = top;
-		ceilingplane->bottom[rw_x] = bottom;
+		seg->ceilingplane->top[rw_x] = top;
+		seg->ceilingplane->bottom[rw_x] = bottom;
 	    }
 	}
 		
@@ -246,8 +246,8 @@ void R_RenderSegLoop (void)
 		top = ceilingclip[rw_x]+1;
 	    if (top <= bottom)
 	    {
-		floorplane->top[rw_x] = top;
-		floorplane->bottom[rw_x] = bottom;
+            seg->floorplane->top[rw_x] = top;
+            seg->floorplane->bottom[rw_x] = bottom;
 	    }
 	}
 	
@@ -373,6 +373,7 @@ void R_RenderSegLoop (void)
 void
 R_StoreWallRange
 ( view_t *view,
+  seg_vis_t *seg,
   int	start,
   int	stop )
 {
@@ -381,6 +382,8 @@ R_StoreWallRange
     angle_t		distangle, offsetangle;
     fixed_t		vtop;
     int			lightnum;
+    sector_t *backsector = seg->seg->backsector;
+    sector_t *frontsector = seg->seg->frontsector;
 
     // don't overflow and crash
     if (ds_p == &drawsegs[MAXDRAWSEGS])
@@ -391,28 +394,28 @@ R_StoreWallRange
 	I_Error ("Bad R_RenderWallRange: %i to %i", start , stop);
 #endif
     
-    sidedef = curline->sidedef;
-    linedef = curline->linedef;
+    sidedef = seg->seg->sidedef;
+    linedef = seg->seg->linedef;
 
     // mark the segment as visible for auto map
     linedef->flags |= ML_MAPPED;
     
     // calculate rw_distance for scale calculation
-    rw_normalangle = curline->angle + ANG90;
-    offsetangle = abs((int)rw_normalangle-(int)rw_angle1);
+    rw_normalangle = seg->seg->angle + ANG90;
+    offsetangle = abs((int)rw_normalangle-(int)seg->angle);
     
     if (offsetangle > ANG90)
 	offsetangle = ANG90;
 
     distangle = ANG90 - offsetangle;
-    hyp = R_PointToDist (view->x, view->y, curline->v1->x, curline->v1->y);
+    hyp = R_PointToDist (view->x, view->y, seg->seg->v1->x, seg->seg->v1->y);
     sineval = finesine[distangle>>ANGLETOFINESHIFT];
     rw_distance = FixedMul (hyp, sineval);
 		
 	
     ds_p->x1 = rw_x = start;
     ds_p->x2 = stop;
-    ds_p->curline = curline;
+    ds_p->curline = seg->seg;
     rw_stopx = stop+1;
     
     // calculate scale at both ends and step
@@ -618,7 +621,7 @@ R_StoreWallRange
 
     if (segtextured)
     {
-	offsetangle = rw_normalangle-rw_angle1;
+	offsetangle = rw_normalangle-seg->angle;
 	
 	if (offsetangle > ANG180)
 	    offsetangle = -offsetangle;
@@ -629,10 +632,10 @@ R_StoreWallRange
 	sineval = finesine[offsetangle >>ANGLETOFINESHIFT];
 	rw_offset = FixedMul (hyp, sineval);
 
-	if (rw_normalangle-rw_angle1 < ANG180)
+	if (rw_normalangle-seg->angle < ANG180)
 	    rw_offset = -rw_offset;
 
-	rw_offset += sidedef->textureoffset + curline->offset;
+	rw_offset += sidedef->textureoffset + seg->seg->offset;
 	rw_centerangle = ANG90 + view->ax - rw_normalangle;
 	
 	// calculate light table
@@ -643,9 +646,9 @@ R_StoreWallRange
 	{
 	    lightnum = (frontsector->lightlevel >> LIGHTSEGSHIFT)+extralight;
 
-	    if (curline->v1->y == curline->v2->y)
+	    if (seg->seg->v1->y == seg->seg->v2->y)
 		lightnum--;
-	    else if (curline->v1->x == curline->v2->x)
+	    else if (seg->seg->v1->x == seg->seg->v2->x)
 		lightnum++;
 
 	    if (lightnum < 0)		
@@ -706,12 +709,12 @@ R_StoreWallRange
     
     // render it
     if (markceiling)
-	ceilingplane = R_CheckPlane (ceilingplane, rw_x, rw_stopx-1);
-    
-    if (markfloor)
-	floorplane = R_CheckPlane (floorplane, rw_x, rw_stopx-1);
+        seg->ceilingplane = R_CheckPlane (seg->ceilingplane, rw_x, rw_stopx-1);
 
-    R_RenderSegLoop ();
+    if (markfloor)
+        seg->floorplane = R_CheckPlane (seg->floorplane, rw_x, rw_stopx-1);
+
+    R_RenderSegLoop (seg);
 
     
     // save sprite clipping info

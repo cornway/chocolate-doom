@@ -35,13 +35,8 @@
 #include "r_state.h"
 //#include "r_local.h"
 
-
-
-seg_t*		curline;
 side_t*		sidedef;
 line_t*		linedef;
-sector_t*	frontsector;
-sector_t*	backsector;
 
 drawseg_t	drawsegs[MAXDRAWSEGS];
 drawseg_t*	ds_p;
@@ -50,6 +45,7 @@ drawseg_t*	ds_p;
 void
 R_StoreWallRange
 ( view_t *view,
+  seg_vis_t *seg,
   int	start,
   int	stop );
 
@@ -102,12 +98,12 @@ cliprange_t	solidsegs[MAXSEGS];
 // 
 void
 R_ClipSolidWallSegment
-( view_t *view,
-  int			first,
-  int			last )
+( view_t *view, seg_vis_t *seg )
 {
     cliprange_t*	next;
     cliprange_t*	start;
+    int first = seg->x1;
+    int last = seg->x2;
 
     // Find the first range that touches the range
     //  (adjacent pixels are touching).
@@ -121,7 +117,7 @@ R_ClipSolidWallSegment
 	{
 	    // Post is entirely visible (above start),
 	    //  so insert a new clippost.
-	    R_StoreWallRange (view, first, last);
+	    R_StoreWallRange (view, seg, first, last);
 	    next = newend;
 	    newend++;
 	    
@@ -136,7 +132,7 @@ R_ClipSolidWallSegment
 	}
 		
 	// There is a fragment above *start.
-	R_StoreWallRange (view, first, start->first - 1);
+	R_StoreWallRange (view, seg, first, start->first - 1);
 	// Now adjust the clip size.
 	start->first = first;	
     }
@@ -149,7 +145,7 @@ R_ClipSolidWallSegment
     while (last >= (next+1)->first-1)
     {
 	// There is a fragment between two posts.
-	R_StoreWallRange (view, next->last + 1, (next+1)->first - 1);
+	R_StoreWallRange (view, seg, next->last + 1, (next+1)->first - 1);
 	next++;
 	
 	if (last <= next->last)
@@ -162,7 +158,7 @@ R_ClipSolidWallSegment
     }
 	
     // There is a fragment after *next.
-    R_StoreWallRange (view, next->last + 1, last);
+    R_StoreWallRange (view, seg, next->last + 1, last);
     // Adjust the clip size.
     start->last = last;
 	
@@ -196,11 +192,11 @@ R_ClipSolidWallSegment
 //
 void
 R_ClipPassWallSegment
-( view_t *view,
-  int	first,
-  int	last )
+( view_t *view, seg_vis_t *seg )
 {
     cliprange_t*	start;
+    int first = seg->x1;
+    int last = seg->x2;
 
     // Find the first range that touches the range
     //  (adjacent pixels are touching).
@@ -213,12 +209,12 @@ R_ClipPassWallSegment
 	if (last < start->first-1)
 	{
 	    // Post is entirely visible (above start).
-	    R_StoreWallRange (view, first, last);
+	    R_StoreWallRange (view, seg, first, last);
 	    return;
 	}
 		
 	// There is a fragment above *start.
-	R_StoreWallRange (view, first, start->first - 1);
+	R_StoreWallRange (view, seg, first, start->first - 1);
     }
 
     // Bottom contained in start?
@@ -228,7 +224,7 @@ R_ClipPassWallSegment
     while (last >= (start+1)->first-1)
     {
 	// There is a fragment between two posts.
-	R_StoreWallRange (view, start->last + 1, (start+1)->first - 1);
+	R_StoreWallRange (view, seg, start->last + 1, (start+1)->first - 1);
 	start++;
 	
 	if (last <= start->last)
@@ -236,7 +232,7 @@ R_ClipPassWallSegment
     }
 	
     // There is a fragment after *next.
-    R_StoreWallRange (view, start->last + 1, last);
+    R_StoreWallRange (view, seg, start->last + 1, last);
 }
 
 
@@ -258,17 +254,16 @@ void R_ClearClipSegs (void)
 // Clips the given segment
 // and adds any visible pieces to the line list.
 //
-void R_AddLine (view_t *view, seg_t *line)
+void R_AddLine (view_t *view, seg_vis_t *line)
 {
     int     x1, x2;
     angle_t angle1, angle2;
     angle_t span, tspan;
-    
-    curline = line;
+    sector_t *frontsector, *backsector;
 
     // OPTIMIZE: quickly reject orthogonal back sides.
-    angle1 = R_PointToAngle (view->x, view->y, line->v1->x, line->v1->y);
-    angle2 = R_PointToAngle (view->x, view->y, line->v2->x, line->v2->y);
+    angle1 = R_PointToAngle (view->x, view->y, line->seg->v1->x, line->seg->v1->y);
+    angle2 = R_PointToAngle (view->x, view->y, line->seg->v2->x, line->seg->v2->y);
     
     // Clip to view edges.
     // OPTIMIZE: make constant out of 2*clipangle (FIELDOFVIEW).
@@ -279,7 +274,7 @@ void R_AddLine (view_t *view, seg_t *line)
         return;
 
     // Global angle needed by segcalc.
-    rw_angle1 = angle1;
+    line->angle = angle1;
     angle1 -= view->ax;
     angle2 -= view->ax;
 
@@ -316,7 +311,8 @@ void R_AddLine (view_t *view, seg_t *line)
     if (x1 == x2)
         return;
 
-    backsector = line->backsector;
+    backsector = line->seg->backsector;
+    frontsector = line->seg->frontsector;
 
     // Single sided line?
     if (!backsector)
@@ -338,17 +334,20 @@ void R_AddLine (view_t *view, seg_t *line)
     if (backsector->ceilingpic == frontsector->ceilingpic
     && backsector->floorpic == frontsector->floorpic
     && backsector->lightlevel == frontsector->lightlevel
-    && curline->sidedef->midtexture == 0)
+    && line->seg->sidedef->midtexture == 0)
     {
         return;
     }
     clippass:
-    R_ClipPassWallSegment (view, x1, x2-1);
+    line->x1 = x1;
+    line->x2 = x2-1;
+    R_ClipPassWallSegment (view, line);
     return;
     clipsolid:
-    R_ClipSolidWallSegment (view, x1, x2-1);
+    line->x1 = x1;
+    line->x2 = x2-1;
+    R_ClipSolidWallSegment (view, line);
 }
-
 
 //
 // R_CheckBBox
@@ -492,7 +491,11 @@ void R_Subsector (view_t *view, int num)
 {
     int			count;
     seg_t*		line;
+    seg_vis_t _vis;
+    seg_vis_t *vis = &_vis;
     subsector_t*	sub;
+    sector_t *frontsector;
+    visplane_t *ceilingplane, *floorplane;
 
 #ifdef RANGECHECK
     if (num>=numsubsectors)
@@ -525,7 +528,10 @@ void R_Subsector (view_t *view, int num)
 
     while (count--)
     {
-        R_AddLine (view, line);
+        vis->seg = line;
+        vis->floorplane = floorplane;
+        vis->ceilingplane = ceilingplane;
+        R_AddLine (view, vis);
         line++;
     }
 

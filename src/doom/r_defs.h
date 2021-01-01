@@ -253,7 +253,15 @@ typedef struct
     
 } seg_t;
 
+struct visplane_s;
 
+typedef struct {
+    seg_t *seg;
+    int x1, x2;
+    struct visplane_s *floorplane, *ceilingplane;
+    angle_t angle;
+    boolean solid;
+} seg_vis_t;
 
 //
 // BSP node.
@@ -420,7 +428,7 @@ typedef struct
 //
 // Now what is a visplane, anyway?
 // 
-typedef struct
+typedef struct visplane_s
 {
   fixed_t		height;
   int			picnum;
