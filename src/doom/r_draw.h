@@ -99,6 +99,6 @@ void R_FillBackScreen (void);
 // If the view size is not full screen, draws a border around it.
 void R_DrawViewBorder (void);
 
-
+pix_t R_MapTexture (seg_vis_t *seg, poly3_t *poly, int u, int v);
 
 #endif

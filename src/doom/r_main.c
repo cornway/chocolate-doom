@@ -35,7 +35,7 @@
 #include "r_local.h"
 #include "r_sky.h"
 #include "r_view.h"
-
+#include "rt.h"
 
 
 // Fineangles in the SCREENWIDTH wide window.
@@ -771,6 +771,8 @@ void R_Init (void)
     R_InitSkyMap ();
     R_InitTranslationTables ();
     printf (".");
+    RT_SetupCore(&rt_core, SCREENWIDTH, SCREENHEIGHT, FRACUNIT, ANG90, ANG90);
+    printf (".");
 	
     framecount = 0;
 }
@@ -845,6 +847,8 @@ void R_SetupFrame (player_t* player)
 		
     framecount++;
     validcount++;
+
+    RT_Generate(&rt_core, player->view);
 }
 
 
@@ -867,7 +871,8 @@ void R_RenderPlayerView (player_t* player)
 
     // The head node is the last node output.
     R_RenderBSPNode (numnodes-1, player->view);
-    R_ProjectBSP(player->view, R_ProjectLine);
+    //R_ProjectBSP(player->view, R_ProjectLine);
+    R_ProjectBSPRays(player->view);
 
     // Check for new console commands.
     NetUpdate ();

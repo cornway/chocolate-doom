@@ -971,5 +971,24 @@ void R_DrawViewBorder (void)
     // ? 
     V_MarkRect (0,0,SCREENWIDTH, SCREENHEIGHT-SBARHEIGHT); 
 } 
- 
- 
+
+
+pix_t R_MapTexture (seg_vis_t *seg, poly3_t *poly, int u, int v)
+{
+    int x, y;
+    int midtexture = texturetranslation[seg->seg->sidedef->midtexture];
+    pix_t *dc_source;
+
+    x = poly->v1->x + u;
+    y = poly->v1->y + v;
+
+    x = x >> FRACBITS;
+    y = y >> FRACBITS;
+
+    printf("%s() : x=%d, y=%d, pic=%d\n", __func__, x, y, midtexture);
+
+    dc_source = R_GetColumn(midtexture, x % 128);
+
+    return dc_source[y % 128];
+}
+

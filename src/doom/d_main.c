@@ -71,6 +71,7 @@
 
 #include "p_setup.h"
 #include "r_local.h"
+#include "rt.h"
 #include "statdump.h"
 
 
@@ -456,6 +457,7 @@ void D_RunFrame()
             wipestart = I_GetTime () - 1;
         } else {
             // normal update
+            RT_Render(&rt_core, I_VideoBuffer, SCREENWIDTH, SCREENHEIGHT);
             I_FinishUpdate ();              // page flip or blit buffer
         }
     }

@@ -402,7 +402,7 @@ R_StoreWallRange
     
     // calculate rw_distance for scale calculation
     rw_normalangle = seg->seg->angle + ANG90;
-    offsetangle = abs((int)rw_normalangle-(int)seg->angle);
+    offsetangle = abs((int)rw_normalangle-(int)seg->ax1);
     
     if (offsetangle > ANG90)
 	offsetangle = ANG90;
@@ -621,7 +621,7 @@ R_StoreWallRange
 
     if (segtextured)
     {
-	offsetangle = rw_normalangle-seg->angle;
+	offsetangle = rw_normalangle-seg->ax1;
 	
 	if (offsetangle > ANG180)
 	    offsetangle = -offsetangle;
@@ -632,7 +632,7 @@ R_StoreWallRange
 	sineval = finesine[offsetangle >>ANGLETOFINESHIFT];
 	rw_offset = FixedMul (hyp, sineval);
 
-	if (rw_normalangle-seg->angle < ANG180)
+	if (rw_normalangle-seg->ax1 < ANG180)
 	    rw_offset = -rw_offset;
 
 	rw_offset += sidedef->textureoffset + seg->seg->offset;

@@ -51,7 +51,7 @@
 #define MAXDRAWSEGS		256
 
 
-
+typedef uint8_t pix_t;
 
 
 //
@@ -71,6 +71,18 @@ typedef struct
     
 } vertex_t;
 
+typedef struct
+{
+    fixed_t	x;
+    fixed_t	y;
+    fixed_t z;
+} vertex3_t;
+
+typedef struct {
+    vertex3_t *v1;
+    vertex3_t *v2;
+    vertex3_t *v3;
+} poly3_t;
 
 // Forward of LineDefs, for Sectors.
 struct line_s;
@@ -255,12 +267,16 @@ typedef struct
 
 struct visplane_s;
 
-typedef struct {
+typedef struct seg_vis_s {
     seg_t *seg;
     int x1, x2;
     struct visplane_s *floorplane, *ceilingplane;
-    angle_t angle;
+    angle_t ax1, ax2;
+    angle_t ay1, ay2;
     boolean solid;
+    vertex3_t vert[8];
+    poly3_t poly[4];
+    int poly_cnt;
 } seg_vis_t;
 
 //

@@ -29,7 +29,8 @@
 #include "r_main.h"
 #include "r_plane.h"
 #include "r_things.h"
-
+#include "r_draw.h"
+#include "rt.h"
 // State.
 #include "doomstat.h"
 #include "r_state.h"
@@ -274,7 +275,10 @@ boolean R_AddLine (view_t *view, seg_vis_t *line)
         return false;
 
     // Global angle needed by segcalc.
-    line->angle = angle1;
+    line->ax1 = angle1;
+    line->ax2 = angle2;
+    line->ay1 = 0;
+    line->ay2 = 0;
     angle1 -= view->ax;
     angle2 -= view->ax;
 
@@ -549,6 +553,42 @@ void R_Subsector (view_t *view, int num)
         I_Error("R_Subsector: solidsegs overflow (vanilla may crash here)\n");
 }
 
+void R_SegToPoly (seg_vis_t *seg)
+{
+    poly3_t *poly = seg->poly;
+    vertex3_t *vert = seg->vert;
+    seg_t *line = seg->seg;
+
+    seg->poly_cnt = 0;
+
+    if (!line->backsector) {
+        vert[0].x = line->v1->x;
+        vert[0].y = line->v1->y;
+        vert[0].z = line->frontsector->floorheight;
+
+        vert[1].x = line->v2->x;
+        vert[1].y = line->v2->y;
+        vert[1].z = line->frontsector->floorheight;
+
+        vert[2].x = line->v1->x;
+        vert[2].y = line->v1->y;
+        vert[2].z = line->frontsector->ceilingheight;
+
+        vert[3].x = line->v2->x;
+        vert[3].y = line->v2->y;
+        vert[3].z = line->frontsector->ceilingheight;
+
+        poly[0].v1 = &vert[0];
+        poly[0].v2 = &vert[1];
+        poly[0].v3 = &vert[2];
+
+        poly[1].v1 = &vert[2];
+        poly[1].v2 = &vert[3];
+        poly[1].v3 = &vert[1];
+
+        seg->poly_cnt = 2;
+    }
+}
 
 void R_ProjectBSP (view_t *view, void (*h) (view_t *view, seg_vis_t *seg) )
 {
@@ -560,6 +600,20 @@ void R_ProjectBSP (view_t *view, void (*h) (view_t *view, seg_vis_t *seg) )
         seg++;
     }
 }
+
+void R_ProjectBSPRays (view_t *view)
+{
+    int count = sscount;
+    seg_vis_t *seg = segs_vis;
+
+    while (count--) {
+        R_SegToPoly(seg);
+        seg++;
+    }
+
+    RT_PreTrace(&rt_core, segs_vis, sscount, R_MapTexture);
+}
+
 
 //
 // RenderBSPNode
