@@ -979,8 +979,8 @@ pix_t R_MapTexture (seg_vis_t *seg, poly3_t *poly, int u, int v)
     int midtexture = texturetranslation[seg->seg->sidedef->midtexture];
     pix_t *dc_source;
 
-    x = poly->v1->x + u;
-    y = poly->v1->y + v;
+    x = u;
+    y = v;
 
     x = x >> FRACBITS;
     y = y >> FRACBITS;

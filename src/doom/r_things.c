@@ -473,8 +473,8 @@ void R_ProjectSprite (view_t *view, mobj_t* thing)
     fixed_t		iscale;
     
     // transform the origin point
-    tr_x = thing->x - view->x;
-    tr_y = thing->y - view->y;
+    tr_x = thing->x - view->orig.x;
+    tr_y = thing->y - view->orig.y;
 	
     gxt = FixedMul(tr_x,view->axcos);
     gyt = -FixedMul(tr_y,view->axsin);
@@ -512,7 +512,7 @@ void R_ProjectSprite (view_t *view, mobj_t* thing)
     if (sprframe->rotate)
     {
 	// choose a different rotation based on player view
-	ang = R_PointToAngle (view->x, view->y, thing->x, thing->y);
+	ang = R_PointToAngle (view->orig.x, view->orig.y, thing->x, thing->y);
 	rot = (ang-thing->angle+(unsigned)(ANG45/2)*9)>>29;
 	lump = sprframe->lump[rot];
 	flip = (boolean)sprframe->flip[rot];
@@ -547,7 +547,7 @@ void R_ProjectSprite (view_t *view, mobj_t* thing)
     vis->gy = thing->y;
     vis->gz = thing->z;
     vis->gzt = thing->z + spritetopoffset[lump];
-    vis->texturemid = vis->gzt - view->z;
+    vis->texturemid = vis->gzt - view->orig.z;
     vis->x1 = x1 < 0 ? 0 : x1;
     vis->x2 = x2 >= viewwidth ? viewwidth-1 : x2;	
     iscale = FixedDiv (FRACUNIT, xscale);

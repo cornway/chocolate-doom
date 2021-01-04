@@ -35,7 +35,8 @@
 #include "r_local.h"
 #include "r_sky.h"
 #include "r_view.h"
-#include "rt.h"
+#include "rt_if.h"
+#include "z_zone.h"
 
 
 // Fineangles in the SCREENWIDTH wide window.
@@ -751,7 +752,10 @@ void R_ExecuteSetViewSize (void)
 // R_Init
 //
 
-
+void *R_Malloc (unsigned size)
+{
+    return Z_Malloc(size, PU_STATIC, NULL);
+}
 
 void R_Init (void)
 {
@@ -771,7 +775,7 @@ void R_Init (void)
     R_InitSkyMap ();
     R_InitTranslationTables ();
     printf (".");
-    RT_SetupCore(&rt_core, SCREENWIDTH, SCREENHEIGHT, FRACUNIT, ANG90, ANG90);
+    RT_SetupCore(&rt_core, SCREENWIDTH, SCREENHEIGHT, FRACUNIT, ANG90, R_Malloc);
     printf (".");
 	
     framecount = 0;
@@ -814,13 +818,13 @@ R_PointInSubsector
 void R_SetupFrame (player_t* player)
 {		
     int		i;
-    view_t *view = player->view;
+    view_t *view = &player->view;
 
     view->player = player;
 
-    view->x = player->mo->x;
-    view->y = player->mo->y;
-    view->z = player->viewz;
+    view->orig.x = player->mo->x;
+    view->orig.y = player->mo->y;
+    view->orig.z = player->viewz;
 
     view->ax = player->mo->angle + viewangleoffset;
     extralight = player->extralight;
@@ -848,7 +852,7 @@ void R_SetupFrame (player_t* player)
     framecount++;
     validcount++;
 
-    RT_Generate(&rt_core, player->view);
+    RT_Generate(&rt_core, &player->view);
 }
 
 
@@ -858,31 +862,36 @@ void R_SetupFrame (player_t* player)
 //
 void R_RenderPlayerView (player_t* player)
 {	
+    extern int g_use_rt;
     R_SetupFrame (player);
 
     // Clear buffers.
     R_ClearClipSegs ();
     R_ClearDrawSegs ();
-    R_ClearPlanes (player->view);
+    R_ClearPlanes (&player->view);
     R_ClearSprites ();
     
     // check for new console commands.
     NetUpdate ();
 
     // The head node is the last node output.
-    R_RenderBSPNode (numnodes-1, player->view);
-    //R_ProjectBSP(player->view, R_ProjectLine);
-    R_ProjectBSPRays(player->view);
+    R_RenderBSPNode (numnodes-1, &player->view);
 
+    sscount = 1;
+    if (g_use_rt) {
+        R_ProjectBSPRays(&player->view);
+    } else {
+        R_ProjectBSP(&player->view, R_ProjectLine);
+    }
     // Check for new console commands.
     NetUpdate ();
     
-    R_DrawPlanes (player->view);
+    R_DrawPlanes (&player->view);
     
     // Check for new console commands.
     NetUpdate ();
 
-    R_DrawMasked (player->view);
+    R_DrawMasked (&player->view);
 
     // Check for new console commands.
     NetUpdate ();				

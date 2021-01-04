@@ -71,7 +71,7 @@
 
 #include "p_setup.h"
 #include "r_local.h"
-#include "rt.h"
+#include "rt_if.h"
 #include "statdump.h"
 
 
@@ -237,7 +237,6 @@ boolean D_Display (void)
     
     // draw the view directly
     if (gamestate == GS_LEVEL && !automapactive && gametic) {
-        players[displayplayer].view = &view;
         R_RenderPlayerView (&players[displayplayer]);
     }
 
@@ -457,7 +456,6 @@ void D_RunFrame()
             wipestart = I_GetTime () - 1;
         } else {
             // normal update
-            RT_Render(&rt_core, I_VideoBuffer, SCREENWIDTH, SCREENHEIGHT);
             I_FinishUpdate ();              // page flip or blit buffer
         }
     }

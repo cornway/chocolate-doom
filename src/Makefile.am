@@ -20,6 +20,7 @@ execgames_SCRIPTS = $(SETUP_BINARIES)
 
 AM_CFLAGS = -I$(top_srcdir)/textscreen            \
             -I$(top_srcdir)/opl                   \
+            -I$(top_srcdir)/rt                    \
             -I$(top_srcdir)/pcsound               \
             @SDLMIXER_CFLAGS@ @SDLNET_CFLAGS@
 
@@ -117,8 +118,9 @@ w_file_posix.c                             \
 w_file_win32.c                             \
 w_merge.c            w_merge.h             \
 z_zone.c             z_zone.h              \
-r_view.c             r_view.h              \
-rt.c                 rt.h
+                     r_view.h              \
+                     rt.h                  \
+rt_if.c              rt_if.h
 
 DEHACKED_SOURCE_FILES =                    \
 deh_defs.h                                 \
@@ -136,6 +138,7 @@ EXTRA_LIBS =                                               \
                $(top_builddir)/textscreen/libtextscreen.a  \
                $(top_builddir)/pcsound/libpcsound.a        \
                $(top_builddir)/opl/libopl.a                \
+               $(top_builddir)/rt/librt.a                 \
                @LDFLAGS@                                   \
                @SDL_LIBS@                                  \
                @SDLMIXER_LIBS@                             \

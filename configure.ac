@@ -17,6 +17,7 @@ orig_CFLAGS="$CFLAGS"
 
 AM_PROG_AR
 AC_PROG_CC
+AC_PROG_CXX
 AC_PROG_RANLIB
 AC_CHECK_PROG(HAVE_PYTHON, python3, true, false)
 
@@ -208,6 +209,7 @@ midiproc/Makefile
 opl/Makefile
 opl/examples/Makefile
 pcsound/Makefile
+rt/Makefile
 pkg/Makefile
 pkg/config.make
 pkg/osx/Info.plist

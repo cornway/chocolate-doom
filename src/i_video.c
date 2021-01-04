@@ -48,6 +48,8 @@
 #include "v_video.h"
 #include "w_wad.h"
 #include "z_zone.h"
+#include "doom/r_defs.h"
+#include "rt_if.h"
 
 // These are (1) the window (or the full screen) that our game is rendered to
 // and (2) the renderer that scales the texture (see below) into this window.
@@ -703,6 +705,8 @@ void I_FinishUpdate (void)
 
     if (noblit)
         return;
+
+    RT_Render(&rt_core, I_VideoBuffer, SCREENWIDTH, SCREENHEIGHT);
 
     if (need_resize)
     {

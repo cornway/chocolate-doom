@@ -38,7 +38,8 @@
 #include "d_ticcmd.h"
 
 #include "net_defs.h"
-
+#include "r_defs.h"
+#include "r_view.h"
 
 
 
@@ -70,8 +71,6 @@ typedef enum
     CF_NOMOMENTUM	= 4
 
 } cheat_t;
-
-struct view_s;
 
 //
 // Extended player object info: player_t
@@ -159,7 +158,7 @@ typedef struct player_s
     // True if secret level has been done.
     boolean		didsecret;	
 
-    struct view_s *view;
+    view_t view;
 } player_t;
 
 

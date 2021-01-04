@@ -7,7 +7,7 @@
 struct player_s;
 
 typedef struct view_s {
-    fixed_t x, y, z;
+    vertex3_t orig;
     angle_t ax, az;
     fixed_t axsin, axcos;
     struct player_s *player;

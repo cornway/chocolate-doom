@@ -140,13 +140,13 @@ R_RenderMaskedSegRange
     {
 	dc_texturemid = frontsector->floorheight > backsector->floorheight
 	    ? frontsector->floorheight : backsector->floorheight;
-	dc_texturemid = dc_texturemid + textureheight[texnum] - view->z;
+	dc_texturemid = dc_texturemid + textureheight[texnum] - view->orig.z;
     }
     else
     {
 	dc_texturemid =frontsector->ceilingheight<backsector->ceilingheight
 	    ? frontsector->ceilingheight : backsector->ceilingheight;
-	dc_texturemid = dc_texturemid - view->z;
+	dc_texturemid = dc_texturemid - view->orig.z;
     }
     dc_texturemid += curline->sidedef->rowoffset;
 			
@@ -408,7 +408,7 @@ R_StoreWallRange
 	offsetangle = ANG90;
 
     distangle = ANG90 - offsetangle;
-    hyp = R_PointToDist (view->x, view->y, seg->seg->v1->x, seg->seg->v1->y);
+    hyp = R_PointToDist (view->orig.x, view->orig.y, seg->seg->v1->x, seg->seg->v1->y);
     sineval = finesine[distangle>>ANGLETOFINESHIFT];
     rw_distance = FixedMul (hyp, sineval);
 		
@@ -450,8 +450,8 @@ R_StoreWallRange
     
     // calculate texture boundaries
     //  and decide if floor / ceiling marks are needed
-    worldtop = frontsector->ceilingheight - view->z;
-    worldbottom = frontsector->floorheight - view->z;
+    worldtop = frontsector->ceilingheight - view->orig.z;
+    worldbottom = frontsector->floorheight - view->orig.z;
 	
     midtexture = toptexture = bottomtexture = maskedtexture = 0;
     ds_p->maskedtexturecol = NULL;
@@ -467,7 +467,7 @@ R_StoreWallRange
 	    vtop = frontsector->floorheight +
 		textureheight[sidedef->midtexture];
 	    // bottom of texture at bottom
-	    rw_midtexturemid = vtop - view->z;
+	    rw_midtexturemid = vtop - view->orig.z;
 	}
 	else
 	{
@@ -493,7 +493,7 @@ R_StoreWallRange
 	    ds_p->silhouette = SIL_BOTTOM;
 	    ds_p->bsilheight = frontsector->floorheight;
 	}
-	else if (backsector->floorheight > view->z)
+	else if (backsector->floorheight > view->orig.z)
 	{
 	    ds_p->silhouette = SIL_BOTTOM;
 	    ds_p->bsilheight = INT_MAX;
@@ -505,7 +505,7 @@ R_StoreWallRange
 	    ds_p->silhouette |= SIL_TOP;
 	    ds_p->tsilheight = frontsector->ceilingheight;
 	}
-	else if (backsector->ceilingheight < view->z)
+	else if (backsector->ceilingheight < view->orig.z)
 	{
 	    ds_p->silhouette |= SIL_TOP;
 	    ds_p->tsilheight = INT_MIN;
@@ -526,8 +526,8 @@ R_StoreWallRange
 	    ds_p->silhouette |= SIL_TOP;
 	}
 	
-	worldhigh = backsector->ceilingheight - view->z;
-	worldlow = backsector->floorheight - view->z;
+	worldhigh = backsector->ceilingheight - view->orig.z;
+	worldlow = backsector->floorheight - view->orig.z;
 		
 	// hack to allow height changes in outdoor areas
 	if (frontsector->ceilingpic == skyflatnum 
@@ -586,7 +586,7 @@ R_StoreWallRange
 		    + textureheight[sidedef->toptexture];
 		
 		// bottom of texture
-		rw_toptexturemid = vtop - view->z;
+		rw_toptexturemid = vtop - view->orig.z;
 	    }
 	}
 	if (worldlow > worldbottom)
@@ -665,13 +665,13 @@ R_StoreWallRange
     //  and doesn't need to be marked.
     
   
-    if (frontsector->floorheight >= view->z)
+    if (frontsector->floorheight >= view->orig.z)
     {
 	// above view plane
 	markfloor = false;
     }
     
-    if (frontsector->ceilingheight <= view->z
+    if (frontsector->ceilingheight <= view->orig.z
 	&& frontsector->ceilingpic != skyflatnum)
     {
 	// below view plane
