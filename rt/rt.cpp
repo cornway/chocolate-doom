@@ -8,35 +8,40 @@ int g_use_rt = 1;
 
 rt_core_t rt_core;
 
-typedef struct rt_ray_s {
-    int x, y;
-    Vec3 dir;
-    vertex3_t *orig;
-    rt_pix_t pixel;
-} rt_ray_t;
+class Ray {
+    public:
+        int x, y;
+        Vec3 dir;
+        vertex3_t *orig;
+        rt_pix_t pixel;
+
+    void Print () {
+        printf("Ray : x=%d, y=%d; dir: x=%f, y=%f, z=%f\n", x, y, dir[0], dir[1], dir[2]);
+    }
+};
 
 void _RT_SetupCore (rt_core_t *core, int w, int h, int d, angle_t fov, void *(*_malloc) (unsigned))
 {
-    rt_ray_t *rays;
+    Ray *rays;
     if (!g_use_rt) {
         return;
     }
 
-    rays = (rt_ray_t *)malloc(w * h * sizeof(rt_ray_t));
+    rays = (Ray *)malloc(w * h * sizeof(Ray));
 
     core->rays = rays;
     core->w = w;
     core->h = h;
     core->d = d;
 
-    printf("\n%s() : w=%d, h=%d, fov=%d, memory=%d bytes\n",
-        __func__, w, h, fov * h * sizeof(rt_ray_t));
+    printf("\n%s() : w=%d, h=%d, fov=%d, memory=%lu bytes\n",
+        __func__, w, h, fov, w * h * sizeof(Ray));
 }
 
 void _RT_Generate (rt_core_t *core, view_t *view)
 {
-    rt_ray_t *rays  = (rt_ray_t *)core->rays;
-    rt_ray_t *ray;
+    Ray *rays  = (Ray *)core->rays;
+    Ray *ray;
     int x, y;
     float scale, ratio, xx, yy, zz;
 
@@ -59,19 +64,21 @@ void _RT_Generate (rt_core_t *core, view_t *view)
 
             xx = (2 * (x + 0.5) / (float)core->w - 1) * ratio * scale;
             yy = (1 - 2 * (y + 0.5) / (float)core->h) * scale;
-            zz= 1.0f;
+            zz= -1.0f;
 
             ray->dir.Init(xx, yy, zz);
             ray->dir.Normalize();
 
             ray->pixel = 0;
+
+            //ray->Print();
         }
     }
 
     printf("%s() ----\n", __func__);
 }
 
-static void __RT_PreTrace (rt_core_t *core, rt_ray_t *ray, seg_vis_t *segs, int seg_count,
+static void __RT_PreTrace (rt_core_t *core, Ray *ray, seg_vis_t *segs, int seg_count,
         rt_pix_t (*mapper) (seg_vis_t *seg, poly3_t *poly, int u, int v))
 {
     seg_vis_t *near_seg = NULL, *seg;
@@ -91,6 +98,9 @@ static void __RT_PreTrace (rt_core_t *core, rt_ray_t *ray, seg_vis_t *segs, int 
             poly = &seg->poly[i];
             Poly3 poly3(poly->v1, poly->v2, poly->v3);
             Vec3 orig(ray->orig);
+
+            ray->Print();
+            poly3.Print();
             if (poly3.Intersect(orig, ray->dir, &u, &v, &t)) {
 
                 if (!dist || t < dist) {
@@ -112,8 +122,8 @@ void _RT_PreTrace (rt_core_t *core, seg_vis_t *segs, int seg_count,
         rt_pix_t (*mapper) (seg_vis_t *seg, poly3_t *poly, int u, int v))
 {
     int x, y;
-    rt_ray_t *ray;
-    rt_ray_t *rays = (rt_ray_t *)core->rays;
+    Ray *ray;
+    Ray *rays = (Ray *)core->rays;
 
     if (!g_use_rt) {
         return;
@@ -134,8 +144,8 @@ void _RT_PreTrace (rt_core_t *core, seg_vis_t *segs, int seg_count,
 void _RT_Render (rt_core_t *core, pix_t *buf, int w, int h)
 {
     int x, y;
-    rt_ray_t *ray;
-    rt_ray_t *rays = (rt_ray_t *)core->rays;
+    Ray *ray;
+    Ray *rays = (Ray *)core->rays;
 
     if (!g_use_rt) {
         return;

@@ -13,6 +13,8 @@ class Poly3 {
         Poly3 (vertex3_t *v0, vertex3_t *v1, vertex3_t *v2);
 
        bool Intersect (Vec3 &orig, Vec3 &dir, float *u, float *v, float *t);
+
+       void Print ();
 };
 
 #endif /* _POLY_H_ */

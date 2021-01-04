@@ -13,7 +13,7 @@ bool Poly3::Intersect (Vec3 &orig, Vec3 &dir, float *u, float *vv, float *t) {
     float det, inv_det;
 
     edge1 = v[1] - v[0];
-    edge1 = v[2] - v[0];
+    edge2 = v[2] - v[0];
 
     dir.Cross(pvec, edge2);
 
@@ -48,4 +48,11 @@ bool Poly3::Intersect (Vec3 &orig, Vec3 &dir, float *u, float *vv, float *t) {
     return true;
 }
 
+void Poly3::Print () {
+    printf("Poly :\n");
+    for (Vec3 vec : v) {
+        vec.Print();
+    }
+    printf("===\n");
+}
 

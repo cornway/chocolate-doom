@@ -7,7 +7,7 @@ Vec3::Vec3 (float x, float y, float z) : v{x, y, z} {}
 Vec3::Vec3 () : Vec3(0, 0, 0) {}
 Vec3::Vec3 (Vec3 &v) : Vec3(v.v[0], v.v[1], v.v[2]) {}
 Vec3::Vec3 (Vec3 &&v) : Vec3(v.v[0], v.v[1], v.v[2]) {}
-Vec3::Vec3 (vertex3_t *v) : Vec3(v->x, v->y, v->z) {}
+Vec3::Vec3 (vertex3_t *v) : Vec3(Fixed::ToFloat(v->x), Fixed::ToFloat(v->y), Fixed::ToFloat(v->z)) {}
 void  Vec3::Init (float x, float y, float z) {
     v[0] = x;
     v[1] = y;
@@ -18,8 +18,8 @@ Vec3 Vec3::operator - (Vec3 &vec) {
   Vec3 d;
 
   d.v[0] = v[0] - vec.v[0];
-  d.v[0] = v[1] - vec.v[1];
-  d.v[0] = v[2] - vec.v[2];
+  d.v[1] = v[1] - vec.v[1];
+  d.v[2] = v[2] - vec.v[2];
   return d;
 }
 
@@ -45,8 +45,15 @@ void Vec3::operator = (Vec3 &&vec) {Init(vec.v[0], vec.v[1], vec.v[2]);}
 
 #define sqr(x) ((x) * (x))
 
-float Vec3::Normalize () {
-    return sqrt(sqr(v[0]) + sqr(v[1]) + sqr(v[2]));
+void Vec3::Normalize () {
+    float d = sqrt(sqr(v[0]) + sqr(v[1]) + sqr(v[2]));
+
+    v[0] /= d;
+    v[1] /= d;
+    v[2] /= d;
 }
 
+void Vec3::Print () {
+    printf("Vector : %f %f %f\n", v[0], v[1], v[2]);
+}
 

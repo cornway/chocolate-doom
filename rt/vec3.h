@@ -6,21 +6,18 @@
 
 #define RTF_EPSILON (0.00000001f)
 
-typedef unsigned int Fixed_t;
+typedef int Fixed_t;
 #define _FRACBITS 16
 #define _FRACUNIT (1 << _FRACBITS)
 
 class Fixed {
     public :
 
-        static Fixed_t ToFixed (float f) {
+        static inline Fixed_t ToFixed (float f) {
             return (Fixed_t)((float)_FRACUNIT * f);
         }
-        static float ToFloat (Fixed_t f) {
-            float m, e;
-            e = (float)(f >> _FRACBITS);
-            m = (float)((float)(f & (_FRACUNIT - 1)) / (float)_FRACUNIT);
-            return e + m;
+        static inline float ToFloat (Fixed_t f) {
+            return (float)((float)f / (float)_FRACUNIT);
         }
 };
 
@@ -40,8 +37,11 @@ class Vec3 {
       Vec3 operator * (float d);
       float operator * (Vec3 &v);
       void operator = (Vec3 &&v);
+      float operator [] (unsigned i) {return v[i];}
       Vec3 &Cross (Vec3 &d, Vec3 &v);
-      float Normalize ();
+      void Normalize ();
+
+      void Print ();
 };
 
 #endif /* _VEC3_H_ */
