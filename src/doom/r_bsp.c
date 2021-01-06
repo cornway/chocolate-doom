@@ -604,17 +604,37 @@ void R_ProjectBSP (view_t *view, void (*h) (view_t *view, seg_vis_t *seg) )
 
 void R_ProjectBSPRays (view_t *view)
 {
-    int count = sscount;
+    int count = sscount, i, poly_cnt = 0;
     seg_vis_t *seg = segs_vis;
+    Poly3_t *polys = malloc(sizeof(Poly3_t) * 1024);
+    Poly3_t *ppolys = polys;
 
     printf("%s() +++ %d\n", __func__, sscount);
 
     while (count--) {
         R_SegToPoly(seg);
         seg++;
+
+        for (i = 0; i < seg->poly_cnt; i++) {
+            ppolys->v1.x = seg->poly[i].v1->x;
+            ppolys->v1.y = seg->poly[i].v1->y;
+            ppolys->v1.z = seg->poly[i].v1->z;
+
+            ppolys->v2.x = seg->poly[i].v2->x;
+            ppolys->v2.y = seg->poly[i].v2->y;
+            ppolys->v2.z = seg->poly[i].v2->z;
+
+            ppolys->v3.x = seg->poly[i].v3->x;
+            ppolys->v3.y = seg->poly[i].v3->y;
+            ppolys->v3.z = seg->poly[i].v3->z;
+
+            poly_cnt++;
+            ppolys++;
+        }
     }
 
-    RT_PreTrace(&rt_core, segs_vis, sscount, R_MapTexture);
+    //RT_PreTrace(&rt_core, segs_vis, sscount, R_MapTexture);
+    SR_LoadVert(polys, poly_cnt);
 }
 
 

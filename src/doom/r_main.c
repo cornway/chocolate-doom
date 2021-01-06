@@ -775,7 +775,9 @@ void R_Init (void)
     R_InitSkyMap ();
     R_InitTranslationTables ();
     printf (".");
-    RT_SetupCore(&rt_core, SCREENWIDTH, SCREENHEIGHT, FRACUNIT, ANG90, R_Malloc);
+    //RT_SetupCore(&rt_core, SCREENWIDTH, SCREENHEIGHT, FRACUNIT, ANG90, R_Malloc);
+    SR_SetupCore(R_DrawTexPix, SCREENWIDTH, SCREENHEIGHT);
+    I_AtExit(SR_DestroyCore, true);
     printf (".");
 	
     framecount = 0;
@@ -852,7 +854,8 @@ void R_SetupFrame (player_t* player)
     framecount++;
     validcount++;
 
-    RT_Generate(&rt_core, &player->view);
+    //RT_Generate(&rt_core, &player->view);
+    SR_SetupCamera();
 }
 
 

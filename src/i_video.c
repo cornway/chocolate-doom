@@ -691,6 +691,11 @@ static void CreateUpscaledTexture(boolean force)
     }
 }
 
+void I_DrawPix (int x, int y, unsigned int pix)
+{
+    I_VideoBuffer[x + SCREENWIDTH * y] = pix;
+}
+
 //
 // I_FinishUpdate
 //
@@ -706,7 +711,9 @@ void I_FinishUpdate (void)
     if (noblit)
         return;
 
-    RT_Render(&rt_core, I_VideoBuffer, SCREENWIDTH, SCREENHEIGHT);
+    //RT_Render(&rt_core, I_VideoBuffer, SCREENWIDTH, SCREENHEIGHT);
+
+    SR_Render();
 
     if (need_resize)
     {
