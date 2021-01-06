@@ -33,13 +33,13 @@ public:
     }
 };
 
+static mat4f modelViewProjectionMatrix;
+
 class VertexShader : public VertexShaderBase<VertexShader> {
 public:
     static const int AttribCount = 1;
     static const int AVarCount = 0;
     static const int PVarCount = 2;
-
-    static mat4f modelViewProjectionMatrix;
 
     static void processVertex(VertexShaderInput in, VertexShaderOutput *out)
     {
@@ -72,7 +72,10 @@ struct Core {
         r.setScissorRect(0, 0, w, h);
         r.setPixelShader<PixelShader>();
 
-        VertexShader::modelViewProjectionMatrix = perspectiveMatrix * lookAtMatrix;
+        v->setViewport(0, 0, w, h);
+        v->setCullMode(CullMode::CW);
+        v->setVertexShader<VertexShader>();
+        modelViewProjectionMatrix = perspectiveMatrix * lookAtMatrix;
     }
 
     ~Core () {

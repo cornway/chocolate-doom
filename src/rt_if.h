@@ -2,6 +2,7 @@
 #define _RT_IF_H_
 
 #include "rt/rt.h"
+#include "rt/sr.h"
 
 void RT_SetupCore (rt_core_t *core, int w, int h, int d, angle_t fov, void *(*_malloc) (unsigned));
 void RT_Generate (rt_core_t *core, view_t *view);

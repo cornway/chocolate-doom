@@ -119,7 +119,6 @@ w_file_win32.c                             \
 w_merge.c            w_merge.h             \
 z_zone.c             z_zone.h              \
                      r_view.h              \
-                     rt.h                  \
 rt_if.c              rt_if.h
 
 DEHACKED_SOURCE_FILES =                    \
@@ -138,7 +137,7 @@ EXTRA_LIBS =                                               \
                $(top_builddir)/textscreen/libtextscreen.a  \
                $(top_builddir)/pcsound/libpcsound.a        \
                $(top_builddir)/opl/libopl.a                \
-               $(top_builddir)/rt/librt.a                 \
+               $(top_builddir)/rt/librt.a                  \
                @LDFLAGS@                                   \
                @SDL_LIBS@                                  \
                @SDLMIXER_LIBS@                             \
