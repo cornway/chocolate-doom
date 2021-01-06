@@ -11,3 +11,4 @@ librt_a_SOURCES =               \
 rt.cpp           rt.h           \
 vec3.cpp         vec3.h         \
 poly.cpp         poly.h         \
+sr.cpp           sr.h           \
