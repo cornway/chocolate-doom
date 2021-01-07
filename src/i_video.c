@@ -696,6 +696,13 @@ void I_DrawPix (int x, int y, unsigned int pix)
     I_VideoBuffer[x + SCREENWIDTH * y] = pix;
 }
 
+void I_ClearScreen(void)
+{
+    SDL_Rect area = { 0, 0, SCREENWIDTH, SCREENHEIGHT };
+
+    SDL_FillRect(screenbuffer, &area, 0);
+}
+
 //
 // I_FinishUpdate
 //
@@ -713,6 +720,7 @@ void I_FinishUpdate (void)
 
     //RT_Render(&rt_core, I_VideoBuffer, SCREENWIDTH, SCREENHEIGHT);
 
+    I_ClearScreen();
     SR_Render();
 
     if (need_resize)

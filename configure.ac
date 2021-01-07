@@ -210,7 +210,6 @@ opl/Makefile
 opl/examples/Makefile
 pcsound/Makefile
 rt/Makefile
-rt/sr/src/renderer/Makefile
 pkg/Makefile
 pkg/config.make
 pkg/osx/Info.plist

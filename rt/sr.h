@@ -5,6 +5,19 @@
     extern "C" {
 #endif
 
+typedef int Fixed_t;
+
+typedef struct
+{
+    Fixed_t	x;
+    Fixed_t	y;
+    Fixed_t z;
+} vertex3_t;
+
+typedef struct {
+    vertex3_t *v1, *v2, *v3;
+} poly3f_t;
+
 typedef struct {
     float x, y, z;
 } Vertex3f_t;
@@ -28,7 +41,7 @@ typedef struct VertexArrayData_s {
 
 void SR_SetupCore (SR_Mapper_t mapper, int w, int h);
 void SR_DestroyCore (void);
-void SR_SetupCamera (void);
+void SR_SetupCamera (Vertex3f_t *orig, Vertex3f_t *dir);
 void SR_LoadVert (Poly3_t *poly, int poly_cnt);
 void SR_Render (void);
 

@@ -1,3 +1,4 @@
+#include <iostream>
 
 #include "sr.h"
 #include "Renderer.h"
@@ -24,7 +25,9 @@ public:
         int tx = p.pvar[0];
         int ty = p.pvar[1];
 
-        g_mapper(NULL, tx, ty, p.x, p.y);
+        std::cout << __func__ << "(): " << p.x << " "  << p.y << " " << tx << " "  << ty << " "  << "\n";
+
+        g_mapper(p.texture, tx, ty, p.x, p.y);
 
         //Uint32 *texBuffer = (Uint32*)((Uint8 *)texture->pixels + (size_t)ty * (size_t)texture->pitch + (size_t)tx * 4);
         //Uint32 *screenBuffer = (Uint32*)((Uint8 *)surface->pixels + (size_t)p.y * (size_t)surface->pitch + (size_t)p.x * 4);
@@ -34,6 +37,7 @@ public:
 };
 
 static mat4f modelViewProjectionMatrix;
+static mat4f perspectiveMatrix;
 
 class VertexShader : public VertexShaderBase<VertexShader> {
 public:
@@ -55,6 +59,8 @@ public:
         out->w = position.w;
         out->pvar[0] = texcoord.x;
         out->pvar[1] = texcoord.y;
+
+        std::cout << __func__ << "() :" << out->x << ", " << out->y << ", " << out->z << ", " << out->w << "\n";
     }
 };
 
@@ -63,8 +69,6 @@ struct Core {
     Rasterizer r;
     VertexProcessor *v;
     Core (SR_Mapper_t mapper, int w, int h) : mapper(mapper) {
-        mat4f lookAtMatrix = vmath::lookat_matrix(vec3f(3.0f, 2.0f, 5.0f), vec3f(0.0f), vec3f(0.0f, 1.0f, 0.0f));
-        mat4f perspectiveMatrix = vmath::perspective_matrix(60.0f, 4.0f / 3.0f, 0.1f, 10.0f);
 
         v = new VertexProcessor(&r);
 
@@ -75,31 +79,22 @@ struct Core {
         v->setViewport(0, 0, w, h);
         v->setCullMode(CullMode::CW);
         v->setVertexShader<VertexShader>();
-        modelViewProjectionMatrix = perspectiveMatrix * lookAtMatrix;
     }
 
     ~Core () {
         delete v;
     }
 
-    Core &LoadVert (Poly3_t *poly, int poly_cnt) {
-        int i;
-
-        for (i = 0; i < poly_cnt; i++) {
-            polys.push_back(poly);
-            poly++;
-        }
-        return *this;
-    }
-
-    void ToVertexArray () {
+    void LoadVert (Poly3_t *poly, int poly_cnt) {
         VertexArrayData vd;
-        int i = 0;
+        int pcnt = 0, i;
+
+        std::cout << __func__ << "+++\n";
 
         idata.clear();
         vdata.clear();
 
-        for (Poly3_t *poly : polys) {
+        for (i = 0, pcnt = 0; pcnt < poly_cnt; i += 3, pcnt++) {
             vd.vertex = poly->v1;
             vd.texvert = poly->t1;
             vdata.push_back(vd);
@@ -116,18 +111,35 @@ struct Core {
             idata.push_back(i+1);
             idata.push_back(i+2);
 
-            i += 3;
+            textures.push_back(poly->data);
+
+            std::cout << __func__ << "():" << i << "; " << poly->v1.x << " " << poly->v1.y << " " << poly->v1.z << "\n";
+            std::cout << __func__ << "():" << i+1 << "; " << poly->v2.x << " " << poly->v2.y << " " << poly->v2.z << "\n";
+            std::cout << __func__ << "():" << i+2 << "; " << poly->v3.x << " " << poly->v3.y << " " << poly->v3.z << "\n";
+            poly++;
         }
     }
     void Render () {
         v->setVertexAttribPointer(0, sizeof(VertexArrayData), &vdata[0]);
-        v->drawElements(DrawMode::Triangle, idata.size(), &idata[0]);
+        v->drawElements(DrawMode::Triangle, idata.size(), &idata[0], &textures[0]);
+    }
+
+    void SetView (Vertex3f_t *orig, Vertex3f_t *dir) {
+        mat4f lookAtMatrix;
+
+        lookAtMatrix= vmath::lookat_matrix(vec3f(orig->x, orig->y, orig->z), vec3f(dir->x, dir->y, dir->z), vec3f(0.0f, 1.0f, 0.0f));
+        perspectiveMatrix = vmath::perspective_matrix(60.0f, 4.0f / 3.0f, 0.1f, 10.0f);
+
+        modelViewProjectionMatrix = perspectiveMatrix * lookAtMatrix;
+
+        std::cout << __func__ << "(): orig=" << orig->x << ", " << orig->y << ", " << orig->z << "\n";
+        std::cout << __func__ << "(): dir=" << dir->x << ", " << dir->y << ", "  << dir->z << "\n";
     }
 
 private:
-    std::vector<Poly3_t *> polys;
     std::vector<VertexArrayData> vdata;
     std::vector<int> idata;
+    std::vector<void *> textures;
     SR_Mapper_t mapper;
 }*core;
 
@@ -143,15 +155,14 @@ void SR_DestroyCore (void)
     delete core;
 }
 
-void SR_SetupCamera (void)
+void SR_SetupCamera (Vertex3f_t *orig, Vertex3f_t *dir)
 {
-
+    core->SetView(orig, dir);
 }
 
 void SR_LoadVert (Poly3_t *poly, int poly_cnt)
 {
     core->LoadVert(poly, poly_cnt);
-    core->ToVertexArray();
 }
 
 void SR_Render (void)

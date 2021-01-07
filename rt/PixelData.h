@@ -34,6 +34,10 @@ namespace swr {
 #pragma warning(push)
 #pragma warning(disable: 26495) // variable in uninitialized
 
+struct TextureData {
+    void *texture;
+};
+
 /// PixelData passed to the pixel shader for display.
 struct PixelData {
 	int x; ///< The x coordinate.
@@ -52,11 +56,14 @@ struct PixelData {
 	// Used internally.
 	float pvarTemp[MaxPVars];
 
+    void *texture;
+
 	PixelData() {}
 
 	// Initialize pixel data for the given pixel coordinates.
-	void init(const TriangleEquations &eqn, float x, float y, int aVarCount, int pVarCount, bool interpolateZ, bool interpolateW)
+	void init(const TriangleEquations &eqn, void *texture, float x, float y, int aVarCount, int pVarCount, bool interpolateZ, bool interpolateW)
 	{
+	    this->texture = texture;
 		if (interpolateZ)
 			z = eqn.z.evaluate(x, y);
 		

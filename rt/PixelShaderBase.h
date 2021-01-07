@@ -53,13 +53,13 @@ public:
 	static const int PVarCount = 0;
 
 	template <bool TestEdges>
-	static void drawBlock(const TriangleEquations &eqn, int x, int y)
+	static void drawBlock(const TriangleEquations &eqn, void *texture, int x, int y)
 	{
 		float xf = x + 0.5f;
 		float yf = y + 0.5f;
 
 		PixelData po;
-		po.init(eqn, xf, yf, Derived::AVarCount, Derived::PVarCount, Derived::InterpolateZ, Derived::InterpolateW);
+		po.init(eqn, texture, xf, yf, Derived::AVarCount, Derived::PVarCount, Derived::InterpolateZ, Derived::InterpolateW);
 
 		EdgeData eo;
 		if (TestEdges)
@@ -93,14 +93,14 @@ public:
 		}
 	}
 
-	static void drawSpan(const TriangleEquations &eqn, int x, int y, int x2)
+	static void drawSpan(const TriangleEquations &eqn, void *texture, int x, int y, int x2)
 	{
 		float xf = x + 0.5f;
 		float yf = y + 0.5f;
 
 		PixelData p;
 		p.y = y;
-		p.init(eqn, xf, yf, Derived::AVarCount, Derived::PVarCount, Derived::InterpolateZ, Derived::InterpolateW);
+		p.init(eqn, texture, xf, yf, Derived::AVarCount, Derived::PVarCount, Derived::InterpolateZ, Derived::InterpolateW);
 
 		while (x < x2)
 		{

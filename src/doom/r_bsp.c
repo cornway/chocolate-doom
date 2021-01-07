@@ -554,9 +554,23 @@ void R_Subsector (view_t *view, int num)
         I_Error("R_Subsector: solidsegs overflow (vanilla may crash here)\n");
 }
 
+void __r_vprint (vertex3_t *v)
+{
+    printf("Vertex(fixed): %d %d %d\n", v->x >> FRACBITS, v->y >> FRACBITS, v->z >> FRACBITS);
+}
+
+void __r_pprint (poly3f_t *fpoly)
+{
+    printf("POly3f: \n");
+    __r_vprint(fpoly->v1);
+    __r_vprint(fpoly->v2);
+    __r_vprint(fpoly->v3);
+}
+
+
 void R_SegToPoly (seg_vis_t *seg)
 {
-    poly3_t *poly = seg->poly;
+    poly3f_t *poly = seg->poly;
     vertex3_t *vert = seg->vert;
     seg_t *line = seg->seg;
 
@@ -602,39 +616,39 @@ void R_ProjectBSP (view_t *view, void (*h) (view_t *view, seg_vis_t *seg) )
     }
 }
 
-void R_ProjectBSPRays (view_t *view)
+void R_RenderWorld (view_t *view)
 {
     int count = sscount, i, poly_cnt = 0;
     seg_vis_t *seg = segs_vis;
-    Poly3_t *polys = malloc(sizeof(Poly3_t) * 1024);
+    Poly3_t polys[1024];
     Poly3_t *ppolys = polys;
+    poly3f_t *fpoly;
 
     printf("%s() +++ %d\n", __func__, sscount);
 
     while (count--) {
         R_SegToPoly(seg);
-        seg++;
 
         for (i = 0; i < seg->poly_cnt; i++) {
-            ppolys->v1.x = seg->poly[i].v1->x;
-            ppolys->v1.y = seg->poly[i].v1->y;
-            ppolys->v1.z = seg->poly[i].v1->z;
+            fpoly = &seg->poly[i];
 
-            ppolys->v2.x = seg->poly[i].v2->x;
-            ppolys->v2.y = seg->poly[i].v2->y;
-            ppolys->v2.z = seg->poly[i].v2->z;
+            //__r_pprint(fpoly);
 
-            ppolys->v3.x = seg->poly[i].v3->x;
-            ppolys->v3.y = seg->poly[i].v3->y;
-            ppolys->v3.z = seg->poly[i].v3->z;
+            R_VFCopy(&ppolys->v1, fpoly->v1);
+            R_VFCopy(&ppolys->v2, fpoly->v2);
+            R_VFCopy(&ppolys->v3, fpoly->v3);
+
+            polys->data = seg;
 
             poly_cnt++;
             ppolys++;
         }
+        seg++;
     }
 
     //RT_PreTrace(&rt_core, segs_vis, sscount, R_MapTexture);
     SR_LoadVert(polys, poly_cnt);
+    printf("%s() ---\n", __func__);
 }
 
 

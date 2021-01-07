@@ -58,9 +58,9 @@ private:
 
 	RasterMode rasterMode;
 
-	void (Rasterizer::*m_triangleFunc)(const RasterizerVertex &v0, const RasterizerVertex &v1, const RasterizerVertex &v2) const;
-	void (Rasterizer::*m_lineFunc)(const RasterizerVertex &v0, const RasterizerVertex &v1) const;
-	void (Rasterizer::*m_pointFunc)(const RasterizerVertex &v) const;
+	void (Rasterizer::*m_triangleFunc)(void *texture, const RasterizerVertex &v0, const RasterizerVertex &v1, const RasterizerVertex &v2) const;
+	void (Rasterizer::*m_lineFunc)(void *texture, const RasterizerVertex &v0, const RasterizerVertex &v1) const;
+	void (Rasterizer::*m_pointFunc)(void *texture, const RasterizerVertex &v) const;
 
 public:
 	/// Constructor.
@@ -96,47 +96,50 @@ public:
 	}
 
 	/// Draw a single point.
-	void drawPoint(const RasterizerVertex &v) const
+	void drawPoint(void *texture, const RasterizerVertex &v) const
 	{
-		(this->*m_pointFunc)(v);
+		(this->*m_pointFunc)(texture, v);
 	}
 
 	/// Draw a single line.
-	void drawLine(const RasterizerVertex &v0, const RasterizerVertex &v1) const
+	void drawLine(void *texture, const RasterizerVertex &v0, const RasterizerVertex &v1) const
 	{
-		(this->*m_lineFunc)(v0, v1);
+		(this->*m_lineFunc)(texture, v0, v1);
 	}
 	
 	/// Draw a single triangle.
-	void drawTriangle(const RasterizerVertex &v0, const RasterizerVertex &v1, const RasterizerVertex &v2) const
+	void drawTriangle(void *texture, const RasterizerVertex &v0, const RasterizerVertex &v1, const RasterizerVertex &v2) const
 	{
-		(this->*m_triangleFunc)(v0, v1, v2);
+		(this->*m_triangleFunc)(texture, v0, v1, v2);
 	}
 
-	void drawPointList(const RasterizerVertex *vertices, const int *indices, size_t indexCount) const
+	void drawPointList(const RasterizerVertex *vertices, void **textures, const int *indices, size_t indexCount) const
 	{
 		for (size_t i = 0; i < indexCount; ++i) {
 			if (indices[i] == -1)
 				continue;
-			drawPoint(vertices[indices[i]]);
+			drawPoint(textures[i], vertices[indices[i]]);
 		}
 	}
 
-	void drawLineList(const RasterizerVertex *vertices, const int *indices, size_t indexCount) const
+	void drawLineList(const RasterizerVertex *vertices, void **textures, const int *indices, size_t indexCount) const
 	{
 		for (size_t i = 0; i + 2 <= indexCount; i += 2) {
 			if (indices[i] == -1)
 				continue;
-			drawLine(vertices[indices[i]], vertices[indices[i + 1]]);
+			drawLine(textures[i / 2], vertices[indices[i]], vertices[indices[i + 1]]);
 		}
 	}
 
-	void drawTriangleList(const RasterizerVertex *vertices, const int *indices, size_t indexCount) const
+	void drawTriangleList(const RasterizerVertex *vertices, void **textures, const int *indices, size_t indexCount) const
 	{
+
+        std::cout << __func__ << "(): " << indexCount << "\n";
+
 		for (size_t i = 0; i + 3 <= indexCount; i += 3) {
 			if (indices[i] == -1)
 				continue;
-			drawTriangle(vertices[indices[i]], vertices[indices[i + 1]], vertices[indices[i + 2]]);
+			drawTriangle(textures[i / 3], vertices[indices[i]], vertices[indices[i + 1]], vertices[indices[i + 2]]);
 		}
 	}
 
@@ -147,13 +150,14 @@ private:
 	}
 
 	template <class PixelShader>
-	void drawPointTemplate(const RasterizerVertex &v) const
+	void drawPointTemplate(void *texture, const RasterizerVertex &v) const
 	{
 		// Check scissor rect
 		if (!scissorTest(v.x, v.y))
 			return;
 
 		PixelData p = pixelDataFromVertex<PixelShader>(v);
+        p.texture = texture;
 		PixelShader::drawPixel(p);
 	}
 
@@ -173,7 +177,7 @@ private:
 	}
 	
 	template <class PixelShader>
-	void drawLineTemplate(const RasterizerVertex &v0, const RasterizerVertex &v1) const
+	void drawLineTemplate(void *texture, const RasterizerVertex &v0, const RasterizerVertex &v1) const
 	{
 		int adx = std::abs((int)v1.x - (int)v0.x);
 		int ady = std::abs((int)v1.y - (int)v0.y);
@@ -185,6 +189,8 @@ private:
 		while (steps-- > 0)
 		{
 			PixelData p = pixelDataFromVertex<PixelShader>(v);
+
+            p.texture = texture;
 
 			if (scissorTest(v.x, v.y))
 				PixelShader::drawPixel(p);
@@ -222,7 +228,7 @@ private:
 	}
 
 	template <class PixelShader>
-	void drawTriangleBlockTemplate(const RasterizerVertex &v0, const RasterizerVertex &v1, const RasterizerVertex &v2) const
+	void drawTriangleBlockTemplate(void *texture, const RasterizerVertex &v0, const RasterizerVertex &v1, const RasterizerVertex &v2) const
 	{
 		// Compute triangle equations.
 		TriangleEquations eqn(v0, v1, v2, PixelShader::AVarCount, PixelShader::PVarCount);
@@ -290,23 +296,23 @@ private:
 				bool e11Same = e11_0 == e11_1 == e11_2;
 
 				if (!e00Same || !e01Same || !e10Same || !e11Same)
-					PixelShader::template drawBlock<true>(eqn, x, y);
+					PixelShader::template drawBlock<true>(eqn, texture, x, y);
 			}
 			else if (result == 4)
 			{
 				// Fully Covered.
-				PixelShader::template drawBlock<false>(eqn, x, y);
+				PixelShader::template drawBlock<false>(eqn, texture, x, y);
 			}
 			else
 			{
 				// Partially Covered.
-				PixelShader::template drawBlock<true>(eqn, x, y);
+				PixelShader::template drawBlock<true>(eqn, texture, x, y);
 			}
 		}
 	}
 
 	template <class PixelShader>
-	void drawTriangleSpanTemplate(const RasterizerVertex &v0, const RasterizerVertex &v1, const RasterizerVertex &v2) const
+	void drawTriangleSpanTemplate(void *texture, const RasterizerVertex &v0, const RasterizerVertex &v1, const RasterizerVertex &v2) const
 	{
 		// Compute triangle equations.
 		TriangleEquations eqn(v0, v1, v2, PixelShader::AVarCount, PixelShader::PVarCount);
@@ -331,13 +337,13 @@ private:
 		{
 			const RasterizerVertex *l = m, *r = t;
 			if (l->x > r->x) std::swap(l, r);
-			drawTopFlatTriangle<PixelShader>(eqn, *l, *r, *b);
+			drawTopFlatTriangle<PixelShader>(eqn, texture, *l, *r, *b);
 		}
 		else if (m->y == b->y)
 		{
 			const RasterizerVertex *l = m, *r = b;
 			if (l->x > r->x) std::swap(l, r);
-			drawBottomFlatTriangle<PixelShader>(eqn, *t, *l, *r);
+			drawBottomFlatTriangle<PixelShader>(eqn, texture, *t, *l, *r);
 		} 
 		else
 		{
@@ -352,13 +358,13 @@ private:
 			const RasterizerVertex *l = m, *r = &v4;
 			if (l->x > r->x) std::swap(l, r);
 
-			drawBottomFlatTriangle<PixelShader>(eqn, *t, *l, *r);
-			drawTopFlatTriangle<PixelShader>(eqn, *l, *r, *b);
+			drawBottomFlatTriangle<PixelShader>(eqn, texture, *t, *l, *r);
+			drawTopFlatTriangle<PixelShader>(eqn, texture, *l, *r, *b);
 		}
 	}
 
 	template <class PixelShader>
-	void drawBottomFlatTriangle(const TriangleEquations &eqn, const RasterizerVertex &v0, const RasterizerVertex &v1, const RasterizerVertex &v2) const
+	void drawBottomFlatTriangle(const TriangleEquations &eqn, void *texture, const RasterizerVertex &v0, const RasterizerVertex &v1, const RasterizerVertex &v2) const
 	{
 		float invslope1 = (v1.x - v0.x) / (v1.y - v0.y);
 		float invslope2 = (v2.x - v0.x) / (v2.y - v0.y);
@@ -377,7 +383,7 @@ private:
 			int xl = std::max(m_minX, (int)curx1);
 			int xr = std::min(m_maxX, (int)curx2);
 
-			PixelShader::drawSpan(eqn, xl, scanlineY, xr);
+			PixelShader::drawSpan(eqn, texture, xl, scanlineY, xr);
 			
 			// curx1 += invslope1;
 			// curx2 += invslope2;
@@ -385,7 +391,7 @@ private:
 	}
 
 	template <class PixelShader>
-	void drawTopFlatTriangle(const TriangleEquations &eqn, const RasterizerVertex &v0, const RasterizerVertex &v1, const RasterizerVertex &v2) const
+	void drawTopFlatTriangle(const TriangleEquations &eqn, void *texture, const RasterizerVertex &v0, const RasterizerVertex &v1, const RasterizerVertex &v2) const
 	{
 		float invslope1 = (v2.x - v0.x) / (v2.y - v0.y);
 		float invslope2 = (v2.x - v1.x) / (v2.y - v1.y);
@@ -404,14 +410,14 @@ private:
 			int xl = std::max(m_minX, (int)curx1);
 			int xr = std::min(m_maxX, (int)curx2);
 
-			PixelShader::drawSpan(eqn, xl, scanlineY, xr);
+			PixelShader::drawSpan(eqn, texture, xl, scanlineY, xr);
 			// curx1 -= invslope1;
 			// curx2 -= invslope2;
 		}
 	}
 
 	template <class PixelShader>
-	void drawTriangleAdaptiveTemplate(const RasterizerVertex &v0, const RasterizerVertex &v1, const RasterizerVertex &v2) const
+	void drawTriangleAdaptiveTemplate(void *texture, const RasterizerVertex &v0, const RasterizerVertex &v1, const RasterizerVertex &v2) const
 	{
 		// Compute triangle bounding box.
 		float minX = (float)std::min(std::min(v0.x, v1.x), v2.x);
@@ -422,24 +428,25 @@ private:
 		float orient = (maxX - minX) / (maxY - minY);
 
 		if (orient > 0.4 && orient < 1.6)
-			drawTriangleBlockTemplate<PixelShader>(v0, v1, v2);
+			drawTriangleBlockTemplate<PixelShader>(texture, v0, v1, v2);
 		else
-			drawTriangleSpanTemplate<PixelShader>(v0, v1, v2);
+			drawTriangleSpanTemplate<PixelShader>(texture, v0, v1, v2);
 	}
 
 	template <class PixelShader>
-	void drawTriangleModeTemplate(const RasterizerVertex &v0, const RasterizerVertex &v1, const RasterizerVertex &v2) const
+	void drawTriangleModeTemplate(void *texture, const RasterizerVertex &v0, const RasterizerVertex &v1, const RasterizerVertex &v2) const
 	{
+	    std::cout << __func__ << "(): " << (int)rasterMode << "\n";
 		switch (rasterMode)
 		{
 			case RasterMode::Span:
-				drawTriangleSpanTemplate<PixelShader>(v0, v1, v2);
+				drawTriangleSpanTemplate<PixelShader>(texture, v0, v1, v2);
 				break;
 			case RasterMode::Block:
-				drawTriangleBlockTemplate<PixelShader>(v0, v1, v2);
+				drawTriangleBlockTemplate<PixelShader>(texture, v0, v1, v2);
 				break;
 			case RasterMode::Adaptive:
-				drawTriangleAdaptiveTemplate<PixelShader>(v0, v1, v2);
+				drawTriangleAdaptiveTemplate<PixelShader>(texture, v0, v1, v2);
 				break;
 		}
 	}

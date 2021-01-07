@@ -821,6 +821,8 @@ void R_SetupFrame (player_t* player)
 {		
     int		i;
     view_t *view = &player->view;
+    Vertex3f_t *orig = &view->origf;
+    Vertex3f_t dir;
 
     view->player = player;
 
@@ -828,13 +830,23 @@ void R_SetupFrame (player_t* player)
     view->orig.y = player->mo->y;
     view->orig.z = player->viewz;
 
+    R_VFCopy(&view->origf, &view->orig);
+
     view->ax = player->mo->angle + viewangleoffset;
+    view->az = 0;
     extralight = player->extralight;
 
 
     view->axsin = finesine[view->ax>>ANGLETOFINESHIFT];
     view->axcos = finecosine[view->ax>>ANGLETOFINESHIFT];
-	
+
+    view->axsinf = ToFloat(view->axsin);
+    view->axcosf = ToFloat(view->axcos);
+
+    dir.x = view->axsinf;
+    dir.y = view->axcosf;
+    dir.z = 1.0f;
+
     sscount = 0;
 	
     if (player->fixedcolormap)
@@ -855,7 +867,7 @@ void R_SetupFrame (player_t* player)
     validcount++;
 
     //RT_Generate(&rt_core, &player->view);
-    SR_SetupCamera();
+    SR_SetupCamera(orig, &dir);
 }
 
 
@@ -880,21 +892,18 @@ void R_RenderPlayerView (player_t* player)
     // The head node is the last node output.
     R_RenderBSPNode (numnodes-1, &player->view);
 
-    sscount = 1;
-    if (g_use_rt) {
-        R_ProjectBSPRays(&player->view);
-    } else {
-        R_ProjectBSP(&player->view, R_ProjectLine);
-    }
+    sscount = sscount < 10 ? sscount : 10;
+    R_RenderWorld(&player->view);
+    //R_ProjectBSP(&player->view, R_ProjectLine);
     // Check for new console commands.
     NetUpdate ();
     
-    R_DrawPlanes (&player->view);
+    //R_DrawPlanes (&player->view);
     
     // Check for new console commands.
     NetUpdate ();
 
-    R_DrawMasked (&player->view);
+    //R_DrawMasked (&player->view);
 
     // Check for new console commands.
     NetUpdate ();				

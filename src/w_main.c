@@ -196,11 +196,6 @@ boolean W_ParseCommandLine(void)
         }
     }
 
-    if (M_CheckParm("-nort")) {
-        extern int g_use_rt;
-        g_use_rt = 0;
-    }
-
 //    W_PrintDirectory();
 
     return modifiedgame;

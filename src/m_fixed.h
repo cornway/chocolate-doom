@@ -34,6 +34,6 @@ typedef int fixed_t;
 fixed_t FixedMul	(fixed_t a, fixed_t b);
 fixed_t FixedDiv	(fixed_t a, fixed_t b);
 
-
+#define ToFloat(a) (float)((float)(a) / (float)FRACUNIT)
 
 #endif

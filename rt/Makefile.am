@@ -1,14 +1,30 @@
 
-AM_CXXFLAGS = $(CXXFLAGS) -I$(top_srcdir)/src -I$(top_srcdir)/rt/sr/src/renderer
-
-SUBDIRS = sr/src/renderer .
-
-librt_LDADD = sr/src/renderer/srlib.a
+AM_CXXFLAGS = $(CXXFLAGS) -I$(top_srcdir)/src
 
 noinst_LIBRARIES=librt.a
 
 librt_a_SOURCES =               \
-rt.cpp           rt.h           \
-vec3.cpp         vec3.h         \
-poly.cpp         poly.h         \
 sr.cpp           sr.h           \
+EdgeData.h \
+EdgeEquation.h \
+IRasterizer.h \
+LineClipper.cpp \
+LineClipper.h \
+LineClipper.o \
+ParameterEquation.h \
+PixelData.h \
+PixelShaderBase.h \
+PolyClipper.cpp \
+PolyClipper.h \
+PolyClipper.o \
+Rasterizer.h \
+Renderer.h \
+TriangleEquations.h \
+vector_math.h \
+VertexCache.h \
+VertexConfig.h \
+VertexProcessor.cpp \
+VertexProcessor.h \
+VertexProcessor.o \
+VertexShaderBase.h
+

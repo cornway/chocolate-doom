@@ -27,6 +27,7 @@
 // Some more or less basic data types
 // we depend on.
 #include "m_fixed.h"
+#include "rt_if.h"
 
 // We rely on the thinker data struct
 // to handle sound origins in sectors.
@@ -70,19 +71,6 @@ typedef struct
     fixed_t	y;
     
 } vertex_t;
-
-typedef struct
-{
-    fixed_t	x;
-    fixed_t	y;
-    fixed_t z;
-} vertex3_t;
-
-typedef struct {
-    vertex3_t *v1;
-    vertex3_t *v2;
-    vertex3_t *v3;
-} poly3_t;
 
 // Forward of LineDefs, for Sectors.
 struct line_s;
@@ -275,7 +263,7 @@ typedef struct seg_vis_s {
     angle_t ay1, ay2;
     boolean solid;
     vertex3_t vert[8];
-    poly3_t poly[4];
+    poly3f_t poly[4];
     int poly_cnt;
 } seg_vis_t;
 
@@ -466,6 +454,12 @@ typedef struct visplane_s
 
 } visplane_t;
 
+static inline void R_VFCopy (Vertex3f_t *d, vertex3_t *s)
+{
+    d->x = ToFloat(s->x);
+    d->y = ToFloat(s->y);
+    d->z = ToFloat(s->z);
+}
 
 
 

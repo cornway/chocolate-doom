@@ -28,6 +28,7 @@ SOFTWARE.
 
 #include <vector>
 #include <cassert>
+#include <iostream>
 
 #include "IRasterizer.h"
 #include "VertexConfig.h"
@@ -88,7 +89,7 @@ public:
 	void setVertexAttribPointer(int index, int stride, const void *buffer);
 	
 	/// Draw a number of points, lines or triangles.
-	void drawElements(DrawMode mode, size_t count, int *indices) const;
+	void drawElements(DrawMode mode, size_t count, int *indices, void **textures) const;
 
 private:
 	struct ClipMask {
@@ -146,6 +147,7 @@ private:
 	// Some temporary variables for speed
 	mutable PolyClipper polyClipper;
 	mutable std::vector<VertexShaderOutput> m_verticesOut;
+    mutable std::vector<void *> m_textures;
 	mutable std::vector<int> m_indicesOut;
 	mutable std::vector<int> m_clipMask;
 	mutable std::vector<bool> m_alreadyProcessed;
