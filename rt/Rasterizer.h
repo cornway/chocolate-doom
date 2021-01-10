@@ -27,6 +27,7 @@ SOFTWARE.
 /** @file */ 
 
 #include <algorithm>
+#include <cassert>
 
 #include "IRasterizer.h"
 #include "EdgeEquation.h"
@@ -98,18 +99,21 @@ public:
 	/// Draw a single point.
 	void drawPoint(void *texture, const RasterizerVertex &v) const
 	{
+		assert(texture);
 		(this->*m_pointFunc)(texture, v);
 	}
 
 	/// Draw a single line.
 	void drawLine(void *texture, const RasterizerVertex &v0, const RasterizerVertex &v1) const
 	{
+		assert(texture);
 		(this->*m_lineFunc)(texture, v0, v1);
 	}
 	
 	/// Draw a single triangle.
 	void drawTriangle(void *texture, const RasterizerVertex &v0, const RasterizerVertex &v1, const RasterizerVertex &v2) const
 	{
+		assert(texture);
 		(this->*m_triangleFunc)(texture, v0, v1, v2);
 	}
 
@@ -133,13 +137,14 @@ public:
 
 	void drawTriangleList(const RasterizerVertex *vertices, void **textures, const int *indices, size_t indexCount) const
 	{
-
-        std::cout << __func__ << "(): " << indexCount << "\n";
-
+		void *texture = NULL;
 		for (size_t i = 0; i + 3 <= indexCount; i += 3) {
 			if (indices[i] == -1)
 				continue;
-			drawTriangle(textures[i / 3], vertices[indices[i]], vertices[indices[i + 1]], vertices[indices[i + 2]]);
+			if (textures) {
+				texture = textures[i / 3];
+			}
+			drawTriangle(texture, vertices[indices[i]], vertices[indices[i + 1]], vertices[indices[i + 2]]);
 		}
 	}
 
@@ -436,7 +441,6 @@ private:
 	template <class PixelShader>
 	void drawTriangleModeTemplate(void *texture, const RasterizerVertex &v0, const RasterizerVertex &v1, const RasterizerVertex &v2) const
 	{
-	    std::cout << __func__ << "(): " << (int)rasterMode << "\n";
 		switch (rasterMode)
 		{
 			case RasterMode::Span:
