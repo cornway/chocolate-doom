@@ -23,6 +23,10 @@ SOFTWARE.
 */
 
 #include <iostream>
+#include <string>
+#include <sstream>
+#include <iostream>
+#include <map>
 
 #include "sr.h"
 #include "Renderer.h"
@@ -76,6 +80,7 @@ struct VertexRef {
     unsigned normalIndex;
     unsigned texcoordIndex;
 };
+
 SR_Mapper_t g_mapper = nullptr;
 
 class PixelShader : public PixelShaderBase<PixelShader> {
@@ -90,8 +95,9 @@ public:
         int tx = p.pvar[0];
         int ty = p.pvar[1];
 
-        std::cout << __func__ << "(): " << p.x << " "  << p.y << " " << tx << " "  << ty << " "  << "\n";
+        //std::cout << __func__ << "(): " << p.x << " "  << p.y << " " << tx << " "  << ty << " "  << "\n";
 
+        assert(p.texture);
         g_mapper(p.texture, tx, ty, p.x, p.y);
 
         //Uint32 *texBuffer = (Uint32*)((Uint8 *)texture->pixels + (size_t)ty * (size_t)texture->pitch + (size_t)tx * 4);
@@ -159,6 +165,9 @@ struct Core {
         idata.clear();
         vdata.clear();
 
+        //ObjData::loadFromString(tempobj, sizeof(tempobj) / sizeof(tempobj[0])).toVertexArray(vdata, idata);
+        //return;
+
         for (i = 0, pcnt = 0; pcnt < poly_cnt; i += 3, pcnt++) {
             vd.vertex = poly->v1;
             vd.texcoord = poly->t1;
@@ -182,8 +191,13 @@ struct Core {
             std::cout << __func__ << "():" << i << "; " << poly->v1.x << " " << poly->v1.y << " " << poly->v1.z << "\n";
             std::cout << __func__ << "():" << i+1 << "; " << poly->v2.x << " " << poly->v2.y << " " << poly->v2.z << "\n";
             std::cout << __func__ << "():" << i+2 << "; " << poly->v3.x << " " << poly->v3.y << " " << poly->v3.z << "\n";
+
+            std::cout << __func__ << "():" << i << "; " << poly->t1.x << " " << poly->t1.y << "\n";
+            std::cout << __func__ << "():" << i+1 << "; " << poly->t2.x << " " << poly->t2.y  << "\n";
+            std::cout << __func__ << "():" << i+2 << "; " << poly->t3.x << " " << poly->t3.y << "\n";
             poly++;
         }
+
     }
     void Render () {
         v->setVertexAttribPointer(0, sizeof(VertexArrayData), &vdata[0]);

@@ -820,8 +820,8 @@ void R_SetupCamera   (vertex3_t *origin, vertex3_t *dir)
     R_VFCopy(&originf, origin);
     R_VFCopy(&dirf, dir);
 
-    VertTranslate2Dto3D(&t_originf, &originf);
-    VertTranslate2Dto3D(&t_dirf, &dirf);
+    R_TranslateVert2Dto3D(&t_originf, &originf);
+    R_TranslateVert2Dto3D(&t_dirf, &dirf);
 
     SR_SetupCamera(&t_originf, &t_dirf);
 }
@@ -843,8 +843,8 @@ void R_SetupFrame (player_t* player)
     view->ax = player->mo->angle + viewangleoffset;
     view->az = 0;
 
-    view->direction.x = finesine[view->ax>>ANGLETOFINESHIFT];
-    view->direction.y = finecosine[view->ax>>ANGLETOFINESHIFT];
+    view->direction.y = finesine[view->ax>>ANGLETOFINESHIFT];
+    view->direction.x = finecosine[view->ax>>ANGLETOFINESHIFT];
     view->direction.z = 0;
 
     R_SetupCamera(&view->orig, &view->direction);
@@ -892,7 +892,6 @@ void R_RenderPlayerView (player_t* player)
     // The head node is the last node output.
     R_RenderBSPNode (numnodes-1, &player->view);
 
-    sscount = sscount < 10 ? sscount : 10;
     R_RenderWorld(&player->view);
     //R_ProjectBSP(&player->view, R_ProjectLine);
     // Check for new console commands.

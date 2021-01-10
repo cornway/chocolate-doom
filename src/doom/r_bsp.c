@@ -566,43 +566,96 @@ static inline void R_PolyToTexCord (poly3_t *poly, int x0, int y0, int x1, int y
     poly->tv3.y = y2;
 }
 
-void R_SegToPoly (seg_vis_t *seg)
+static int R_GeneratePoly (seg_t *line, vertex3_t *v, poly3_t poly[2], fixed_t floor, fixed_t height, int texnum)
 {
-    poly3_t *poly = seg->poly;
-    vertex3_t *vert = seg->vert;
+    v[0].x = line->v1->x;
+    v[0].y = line->v1->y;
+    v[0].z = floor;
+
+    v[1].x = line->v2->x;
+    v[1].y = line->v2->y;
+    v[1].z = floor;
+
+    v[2].x = line->v1->x;
+    v[2].y = line->v1->y;
+    v[2].z = floor + height;
+
+    v[3].x = line->v2->x;
+    v[3].y = line->v2->y;
+    v[3].z = floor + height;
+
+    poly[0].v1 = v[0];
+    poly[0].v2 = v[1];
+    poly[0].v3 = v[2];
+
+    poly[1].v1 = v[2];
+    poly[1].v2 = v[1];
+    poly[1].v3 = v[3];
+
+    poly[0].texture = texnum;
+    poly[1].texture = texnum;
+
+    R_PolyToTexCord(&poly[0], 0, 0, 0, 128, 128, 0);
+    R_PolyToTexCord(&poly[1], 128, 0, 0, 128, 128, 128);
+
+    return 2;
+}
+
+int R_SegToPoly (vertex3_t *vert, poly3_t *poly, seg_vis_t *seg)
+{
     seg_t *line = seg->seg;
+    fixed_t floor, ceil;
+    int vcount = 0, pcount = 0;
 
-    seg->poly_cnt = 0;
+    printf("%s()+++\n", __func__);
 
-    if (1 || line->sidedef->midtexture) {
-        vert[0].x = line->v1->x;
-        vert[0].y = line->v1->y;
-        vert[0].z = line->frontsector->floorheight;
+    if (line->sidedef->bottomtexture && line->backsector) {
+        floor = min(line->backsector->floorheight, line->frontsector->floorheight);
+        ceil = max(line->backsector->floorheight, line->frontsector->floorheight);
+        pcount += R_GeneratePoly(line, &vert[vcount], &poly[pcount], floor, ceil - floor, line->sidedef->bottomtexture);
+        vcount += pcount * 2;
+    }
+    if (line->sidedef->toptexture && line->backsector) {
+        floor = min(line->backsector->floorheight, line->frontsector->floorheight);
+        ceil = max(line->backsector->floorheight, line->frontsector->floorheight);
+        pcount += R_GeneratePoly(line, &vert[vcount], &poly[pcount], floor, ceil - floor, line->sidedef->toptexture);
+        vcount += pcount * 2;
+    }
+    if (line->sidedef->midtexture) {
+        floor = line->frontsector->floorheight;
+        ceil = line->frontsector->ceilingheight;
+        pcount += R_GeneratePoly(line, &vert[vcount], &poly[pcount], floor, ceil - floor, line->sidedef->midtexture);
+        vcount += pcount * 2;
+    }
+    printf("%s()--- pcount=%d\n", __func__, pcount);
+    return pcount;
+}
 
-        vert[1].x = line->v2->x;
-        vert[1].y = line->v2->y;
-        vert[1].z = line->frontsector->floorheight;
+void R_TransformPoly (Poly3f_t *dest, poly3_t *src, int cnt)
+{
+    Vertex3f_t fvert;
+    int i;
+    for (i = 0; i < cnt; i++) {
 
-        vert[2].x = line->v1->x;
-        vert[2].y = line->v1->y;
-        vert[2].z = line->frontsector->ceilingheight;
+        R_VFCopy(&fvert, &src->v1);
+        R_TranslateVert2Dto3D(&dest->v1, &fvert);
 
-        vert[3].x = line->v2->x;
-        vert[3].y = line->v2->y;
-        vert[3].z = line->frontsector->ceilingheight;
+        R_VFCopy(&fvert, &src->v2);
+        R_TranslateVert2Dto3D(&dest->v2, &fvert);
 
-        poly[0].v1 = &seg->vert[0];
-        poly[0].v2 = &seg->vert[1];
-        poly[0].v3 = &seg->vert[2];
+        R_VFCopy(&fvert, &src->v3);
+        R_TranslateVert2Dto3D(&dest->v3, &fvert);
 
-        poly[1].v1 = &seg->vert[1];
-        poly[1].v2 = &seg->vert[3];
-        poly[1].v3 = &seg->vert[2];
+        dest->t1.x = src->tv1.x;
+        dest->t1.y = src->tv1.y;
+        dest->t2.x = src->tv2.x;
+        dest->t2.y = src->tv2.y;
+        dest->t3.x = src->tv3.x;
+        dest->t3.y = src->tv3.y;
 
-        R_PolyToTexCord(&poly[0], 0, 0, 0, 128, 128, 0);
-        R_PolyToTexCord(&poly[1], 128, 0, 128, 128, 128, 0);
-
-        seg->poly_cnt = 2;
+        dest->data = (void *)src->texture;
+        dest++;
+        src++;
     }
 }
 
@@ -619,47 +672,23 @@ void R_ProjectBSP (view_t *view, void (*h) (view_t *view, seg_vis_t *seg) )
 
 void R_RenderWorld (view_t *view)
 {
-    int count = sscount, i, poly_cnt = 0;
+    int seg_count = sscount, in_poly_cnt = 0, out_poly_cnt = 0;
     seg_vis_t *seg = segs_vis;
+    vertex3_t vert[8];
+    poly3_t poly[4];
     Poly3f_t polys[1024];
-    Poly3f_t *ppolys = polys;
-    poly3_t *fpoly;
-    Vertex3f_t vtmp;
 
     printf("%s() +++ %d\n", __func__, sscount);
 
-    while (count--) {
-        R_SegToPoly(seg);
+    while (seg_count--) {
+        in_poly_cnt = R_SegToPoly(vert, poly, seg);
 
-        for (i = 0; i < seg->poly_cnt; i++) {
-            fpoly = &seg->poly[i];
-
-            R_VFCopy(&vtmp, fpoly->v1);
-            VertTranslate2Dto3D(&ppolys->v1, &vtmp);
-
-            R_VFCopy(&vtmp, fpoly->v2);
-            VertTranslate2Dto3D(&ppolys->v2, &vtmp);
-
-            R_VFCopy(&vtmp, fpoly->v3);
-            VertTranslate2Dto3D(&ppolys->v3, &vtmp);
-
-            ppolys->t1.x = fpoly->tv1.x;
-            ppolys->t1.y = fpoly->tv1.y;
-            ppolys->t2.x = fpoly->tv2.x;
-            ppolys->t2.y = fpoly->tv2.y;
-            ppolys->t3.x = fpoly->tv3.x;
-            ppolys->t3.y = fpoly->tv3.y;
-
-            ppolys->data = seg;
-
-            poly_cnt++;
-            ppolys++;
-        }
+        R_TransformPoly(&polys[out_poly_cnt], poly, in_poly_cnt);
+        out_poly_cnt += in_poly_cnt;
         seg++;
     }
 
-    //RT_PreTrace(&rt_core, segs_vis, sscount, R_MapTexture);
-    SR_LoadVert(polys, poly_cnt);
+    SR_LoadVert(polys, out_poly_cnt);
     printf("%s() ---\n", __func__);
 }
 

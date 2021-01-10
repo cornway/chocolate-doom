@@ -994,23 +994,23 @@ pix_t R_MapTexture (seg_vis_t *seg, poly3_t *poly, int u, int v)
 
 extern void I_DrawPix (int x, int y, unsigned int pix);
 
-unsigned int R_DrawTexPix (void *_seg, int u, int v, int x, int y)
+unsigned int R_DrawTexPix (void *data, int u, int v, int x, int y)
 {
-    seg_vis_t *seg = (seg_vis_t *)_seg;
-    int midtexture = -1;
+    int midtexture = -1, texnum = (int)data;
     pix_t *dc_source;
     pix_t pix = (pix_t)-1;
 
-    if (seg) {
-        midtexture = texturetranslation[seg->seg->sidedef->midtexture];
-        dc_source = R_GetColumn(midtexture, u);
-        pix = dc_source[v % 128];
+    if (texnum) {
+        midtexture = texturetranslation[texnum];
+        dc_source = R_GetColumn(midtexture, v);
+        pix = dc_source[u % 128];
     }
 
     //printf("%s() : u=%d, v=%d, x=%d, y=%d, pic=%d\n", __func__, u, v, x, y, midtexture);
 
-    I_DrawPix(x, y, pix);
-
+    if (texnum) {
+        I_DrawPix(x, y, pix);
+    }
     return pix;
 }
 

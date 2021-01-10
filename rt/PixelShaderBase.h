@@ -119,7 +119,7 @@ public:
 	}
 
 protected:
-	static PixelData copyPixelData(PixelData &po)
+	static PixelData copyPixelData(const PixelData &po)
 	{
 		PixelData pi;
 		if (Derived::InterpolateZ) pi.z = po.z;
@@ -131,6 +131,7 @@ protected:
 			pi.pvarTemp[i] = po.pvarTemp[i];
 			pi.pvar[i] = po.pvar[i];
 		}
+        pi.texture = po.texture;
 		return pi;
 	}
 };

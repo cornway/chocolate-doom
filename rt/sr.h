@@ -21,8 +21,9 @@ typedef struct
 } vertex2_t;
 
 typedef struct {
-    vertex3_t *v1, *v2, *v3;
+    vertex3_t v1, v2, v3;
     vertex2_t tv1, tv2, tv3;
+    int texture;
 } poly3_t;
 
 typedef struct {

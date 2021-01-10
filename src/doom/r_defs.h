@@ -39,8 +39,13 @@
 
 #include "v_patch.h"
 
+#ifndef min
+#define min(a, b) ((a) > (b) ? (b) : (a))
+#endif
 
-
+#ifndef max
+#define max(a, b) ((b) > (a) ? (b) : (a))
+#endif
 
 // Silhouette, needed for clipping Segs (mainly)
 // and sprites representing things.
@@ -262,9 +267,6 @@ typedef struct seg_vis_s {
     angle_t ax1, ax2;
     angle_t ay1, ay2;
     boolean solid;
-    vertex3_t vert[8];
-    poly3_t poly[4];
-    int poly_cnt;
 } seg_vis_t;
 
 //

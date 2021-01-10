@@ -16,7 +16,7 @@ typedef struct view_s {
     struct player_s *player;
 } view_t;
 
-static inline void VertTranslate2Dto3D (Vertex3f_t *out, Vertex3f_t *in)
+static inline void R_TranslateVert2Dto3D (Vertex3f_t *out, Vertex3f_t *in)
 {
     out->x = in->y;
     out->y = in->z;
