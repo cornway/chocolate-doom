@@ -973,7 +973,7 @@ void R_DrawViewBorder (void)
 } 
 
 
-pix_t R_MapTexture (seg_vis_t *seg, poly3f_t *poly, int u, int v)
+pix_t R_MapTexture (seg_vis_t *seg, poly3_t *poly, int u, int v)
 {
     int x, y;
     int midtexture = texturetranslation[seg->seg->sidedef->midtexture];
@@ -1003,11 +1003,11 @@ unsigned int R_DrawTexPix (void *_seg, int u, int v, int x, int y)
 
     if (seg) {
         midtexture = texturetranslation[seg->seg->sidedef->midtexture];
-        dc_source = R_GetColumn(midtexture, u % 128);
+        dc_source = R_GetColumn(midtexture, u);
         pix = dc_source[v % 128];
     }
 
-    printf("%s() : u=%d, v=%d, x=%d, y=%d, pic=%d\n", __func__, u, v, x, y, midtexture);
+    //printf("%s() : u=%d, v=%d, x=%d, y=%d, pic=%d\n", __func__, u, v, x, y, midtexture);
 
     I_DrawPix(x, y, pix);
 

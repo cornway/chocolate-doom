@@ -263,7 +263,7 @@ typedef struct seg_vis_s {
     angle_t ay1, ay2;
     boolean solid;
     vertex3_t vert[8];
-    poly3f_t poly[4];
+    poly3_t poly[4];
     int poly_cnt;
 } seg_vis_t;
 
@@ -460,7 +460,5 @@ static inline void R_VFCopy (Vertex3f_t *d, vertex3_t *s)
     d->y = ToFloat(s->y);
     d->z = ToFloat(s->z);
 }
-
-
 
 #endif

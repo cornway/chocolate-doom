@@ -10,12 +10,18 @@ struct player_s;
 
 typedef struct view_s {
     vertex3_t orig;
-    Vertex3f_t origf;
+    vertex3_t direction;
     angle_t ax, az;
-    float axsinf, axcosf;
-    fixed_t axsin, axcos;
+
     struct player_s *player;
 } view_t;
+
+static inline void VertTranslate2Dto3D (Vertex3f_t *out, Vertex3f_t *in)
+{
+    out->x = in->y;
+    out->y = in->z;
+    out->z = in->x;
+}
 
 extern view_t view;
 

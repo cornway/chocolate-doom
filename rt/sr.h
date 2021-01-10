@@ -14,9 +14,16 @@ typedef struct
     Fixed_t z;
 } vertex3_t;
 
+typedef struct
+{
+    Fixed_t	x;
+    Fixed_t	y;
+} vertex2_t;
+
 typedef struct {
     vertex3_t *v1, *v2, *v3;
-} poly3f_t;
+    vertex2_t tv1, tv2, tv3;
+} poly3_t;
 
 typedef struct {
     float x, y, z;
@@ -28,21 +35,16 @@ typedef struct {
 
 typedef unsigned int (*SR_Mapper_t) (void *, int, int, int, int);
 
-typedef struct Poly3_s {
+typedef struct Poly3f_s {
     Vertex3f_t v1, v2, v3;
     Vertex2f_t t1, t2, t3;
     void *data;
-} Poly3_t;
-
-typedef struct VertexArrayData_s {
-    Vertex3f_t vertex;
-    Vertex2f_t texvert;
-} VertexArrayData;
+} Poly3f_t;
 
 void SR_SetupCore (SR_Mapper_t mapper, int w, int h);
 void SR_DestroyCore (void);
 void SR_SetupCamera (Vertex3f_t *orig, Vertex3f_t *dir);
-void SR_LoadVert (Poly3_t *poly, int poly_cnt);
+void SR_LoadVert (Poly3f_t *poly, int poly_cnt);
 void SR_Render (void);
 
 #ifdef __cplusplus

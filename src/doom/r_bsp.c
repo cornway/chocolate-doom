@@ -554,23 +554,21 @@ void R_Subsector (view_t *view, int num)
         I_Error("R_Subsector: solidsegs overflow (vanilla may crash here)\n");
 }
 
-void __r_vprint (vertex3_t *v)
+static inline void R_PolyToTexCord (poly3_t *poly, int x0, int y0, int x1, int y1, int x2, int y2)
 {
-    printf("Vertex(fixed): %d %d %d\n", v->x >> FRACBITS, v->y >> FRACBITS, v->z >> FRACBITS);
-}
+    poly->tv1.x = x0;
+    poly->tv1.y = y0;
 
-void __r_pprint (poly3f_t *fpoly)
-{
-    printf("POly3f: \n");
-    __r_vprint(fpoly->v1);
-    __r_vprint(fpoly->v2);
-    __r_vprint(fpoly->v3);
-}
+    poly->tv2.x = x1;
+    poly->tv2.y = y1;
 
+    poly->tv3.x = x2;
+    poly->tv3.y = y2;
+}
 
 void R_SegToPoly (seg_vis_t *seg)
 {
-    poly3f_t *poly = seg->poly;
+    poly3_t *poly = seg->poly;
     vertex3_t *vert = seg->vert;
     seg_t *line = seg->seg;
 
@@ -593,13 +591,16 @@ void R_SegToPoly (seg_vis_t *seg)
         vert[3].y = line->v2->y;
         vert[3].z = line->frontsector->ceilingheight;
 
-        poly[0].v1 = &vert[0];
-        poly[0].v2 = &vert[1];
-        poly[0].v3 = &vert[2];
+        poly[0].v1 = &seg->vert[0];
+        poly[0].v2 = &seg->vert[1];
+        poly[0].v3 = &seg->vert[2];
 
-        poly[1].v1 = &vert[2];
-        poly[1].v2 = &vert[3];
-        poly[1].v3 = &vert[1];
+        poly[1].v1 = &seg->vert[1];
+        poly[1].v2 = &seg->vert[3];
+        poly[1].v3 = &seg->vert[2];
+
+        R_PolyToTexCord(&poly[0], 0, 0, 0, 128, 128, 0);
+        R_PolyToTexCord(&poly[1], 128, 0, 128, 128, 128, 0);
 
         seg->poly_cnt = 2;
     }
@@ -620,9 +621,10 @@ void R_RenderWorld (view_t *view)
 {
     int count = sscount, i, poly_cnt = 0;
     seg_vis_t *seg = segs_vis;
-    Poly3_t polys[1024];
-    Poly3_t *ppolys = polys;
-    poly3f_t *fpoly;
+    Poly3f_t polys[1024];
+    Poly3f_t *ppolys = polys;
+    poly3_t *fpoly;
+    Vertex3f_t vtmp;
 
     printf("%s() +++ %d\n", __func__, sscount);
 
@@ -632,13 +634,23 @@ void R_RenderWorld (view_t *view)
         for (i = 0; i < seg->poly_cnt; i++) {
             fpoly = &seg->poly[i];
 
-            //__r_pprint(fpoly);
+            R_VFCopy(&vtmp, fpoly->v1);
+            VertTranslate2Dto3D(&ppolys->v1, &vtmp);
 
-            R_VFCopy(&ppolys->v1, fpoly->v1);
-            R_VFCopy(&ppolys->v2, fpoly->v2);
-            R_VFCopy(&ppolys->v3, fpoly->v3);
+            R_VFCopy(&vtmp, fpoly->v2);
+            VertTranslate2Dto3D(&ppolys->v2, &vtmp);
 
-            polys->data = seg;
+            R_VFCopy(&vtmp, fpoly->v3);
+            VertTranslate2Dto3D(&ppolys->v3, &vtmp);
+
+            ppolys->t1.x = fpoly->tv1.x;
+            ppolys->t1.y = fpoly->tv1.y;
+            ppolys->t2.x = fpoly->tv2.x;
+            ppolys->t2.y = fpoly->tv2.y;
+            ppolys->t3.x = fpoly->tv3.x;
+            ppolys->t3.y = fpoly->tv3.y;
+
+            ppolys->data = seg;
 
             poly_cnt++;
             ppolys++;

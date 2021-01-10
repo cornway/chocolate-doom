@@ -812,7 +812,19 @@ R_PointInSubsector
     return &subsectors[nodenum & ~NF_SUBSECTOR];
 }
 
+void R_SetupCamera   (vertex3_t *origin, vertex3_t *dir)
+{
+    Vertex3f_t originf, t_originf;
+    Vertex3f_t dirf, t_dirf;
 
+    R_VFCopy(&originf, origin);
+    R_VFCopy(&dirf, dir);
+
+    VertTranslate2Dto3D(&t_originf, &originf);
+    VertTranslate2Dto3D(&t_dirf, &dirf);
+
+    SR_SetupCamera(&t_originf, &t_dirf);
+}
 
 //
 // R_SetupFrame
@@ -821,8 +833,6 @@ void R_SetupFrame (player_t* player)
 {		
     int		i;
     view_t *view = &player->view;
-    Vertex3f_t *origf = &view->origf;
-    Vertex3f_t dir;
 
     view->player = player;
 
@@ -832,23 +842,14 @@ void R_SetupFrame (player_t* player)
 
     view->ax = player->mo->angle + viewangleoffset;
     view->az = 0;
+
+    view->direction.x = finesine[view->ax>>ANGLETOFINESHIFT];
+    view->direction.y = finecosine[view->ax>>ANGLETOFINESHIFT];
+    view->direction.z = 0;
+
+    R_SetupCamera(&view->orig, &view->direction);
+
     extralight = player->extralight;
-
-
-    view->axsin = finesine[view->ax>>ANGLETOFINESHIFT];
-    view->axcos = finecosine[view->ax>>ANGLETOFINESHIFT];
-
-    view->axsinf = ToFloat(view->axsin);
-    view->axcosf = ToFloat(view->axcos);
-
-    origf->x = ToFloat(view->orig.y);
-    origf->y = ToFloat(view->orig.z);
-    origf->z = ToFloat(view->orig.x);
-
-    dir.x = view->axsinf;
-    dir.y = 0.0f;
-    dir.z =  view->axcosf;
-
     sscount = 0;
 	
     if (player->fixedcolormap)
@@ -867,9 +868,6 @@ void R_SetupFrame (player_t* player)
 		
     framecount++;
     validcount++;
-
-    //RT_Generate(&rt_core, &player->view);
-    SR_SetupCamera(origf, &dir);
 }
 
 
