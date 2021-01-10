@@ -821,7 +821,7 @@ void R_SetupFrame (player_t* player)
 {		
     int		i;
     view_t *view = &player->view;
-    Vertex3f_t *orig = &view->origf;
+    Vertex3f_t *origf = &view->origf;
     Vertex3f_t dir;
 
     view->player = player;
@@ -829,8 +829,6 @@ void R_SetupFrame (player_t* player)
     view->orig.x = player->mo->x;
     view->orig.y = player->mo->y;
     view->orig.z = player->viewz;
-
-    R_VFCopy(&view->origf, &view->orig);
 
     view->ax = player->mo->angle + viewangleoffset;
     view->az = 0;
@@ -843,9 +841,13 @@ void R_SetupFrame (player_t* player)
     view->axsinf = ToFloat(view->axsin);
     view->axcosf = ToFloat(view->axcos);
 
+    origf->x = ToFloat(view->orig.y);
+    origf->y = ToFloat(view->orig.z);
+    origf->z = ToFloat(view->orig.x);
+
     dir.x = view->axsinf;
-    dir.y = view->axcosf;
-    dir.z = 1.0f;
+    dir.y = 0.0f;
+    dir.z =  view->axcosf;
 
     sscount = 0;
 	
@@ -867,7 +869,7 @@ void R_SetupFrame (player_t* player)
     validcount++;
 
     //RT_Generate(&rt_core, &player->view);
-    SR_SetupCamera(orig, &dir);
+    SR_SetupCamera(origf, &dir);
 }
 
 
