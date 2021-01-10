@@ -190,16 +190,19 @@ struct Core {
         v->drawElements(DrawMode::Triangle, idata.size(), &idata[0], &textures[0]);
     }
 
-    void SetView (Vertex3f_t *orig, Vertex3f_t *dir) {
+    void SetView (Vertex3f_t *pos, Vertex3f_t *dirf) {
         mat4f lookAtMatrix;
+        vec3f up(0.0f, 1.0f, 0.0f);
+        vec3f dir(dirf);
+        vec3f orig(pos);
+        float speed = 1.0f;
 
-        lookAtMatrix= vmath::lookat_matrix(vec3f(orig->x, orig->y, orig->z), vec3f(dir->x, dir->y, dir->z), vec3f(0.0f, 1.0f, 0.0f));
-        perspectiveMatrix = vmath::perspective_matrix(60.0f, 4.0f / 3.0f, 0.1f, 10.0f);
+        lookAtMatrix= vmath::lookat_matrix(orig, dir, up, speed);
 
         modelViewProjectionMatrix = perspectiveMatrix * lookAtMatrix;
 
-        std::cout << __func__ << "(): orig=" << orig->x << ", " << orig->y << ", " << orig->z << "\n";
-        std::cout << __func__ << "(): dir=" << dir->x << ", " << dir->y << ", "  << dir->z << "\n";
+        std::cout << __func__ << "(): orig=" << orig.x << ", " << orig.y << ", " << orig.z << "\n";
+        std::cout << __func__ << "(): dir=" << dir.x << ", " << dir.y << ", "  << dir.z << "\n";
     }
 
 private:

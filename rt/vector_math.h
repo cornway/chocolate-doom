@@ -770,8 +770,14 @@ inline mat4<T> ortho_matrix(const T l, const T r, const T b, const T t, const T 
 }
 
 template <typename T>
-inline mat4<T> lookat_matrix(const vec3<T>& eye, const vec3<T>& dir, const vec3<T>& up) {
-	const vec3<T> forward = normalize(dir);
+inline mat4<T> lookat_matrix(const vec3<T>& eye, const vec3<T>& dir, const vec3<T>& up, float speed) {
+    vec3<T> center = eye + dir * speed;
+    return lookat_matrix(eye, center, up);
+}
+
+template <typename T>
+inline mat4<T> lookat_matrix(const vec3<T>& eye, const vec3<T>& center, const vec3<T>& up) {
+	const vec3<T> forward = normalize(center - eye);
 	const vec3<T> side = normalize(cross(forward, up));
 	
 	const vec3<T> up2 = cross(side, forward);
