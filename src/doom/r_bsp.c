@@ -575,6 +575,10 @@ static int R_GeneratePoly (seg_t *line, vertex3_t *v, poly3_t poly[2], fixed_t f
     const int ccw_dir[] = {0, 2, 1, 2, 3, 1};
     const int *dir;
 
+    if (!flength || !fheight) {
+        return 0;
+    }
+
     v[0].x = line->v1->x;
     v[0].y = line->v1->y;
     v[0].z = floor;
@@ -616,8 +620,6 @@ int R_SegToPoly (vertex3_t *vert, poly3_t *poly, seg_vis_t *seg)
     fixed_t floor, ceil;
     int vcount = 0, pcount = 0;
 
-    printf("%s()+++\n", __func__);
-
     if (line->sidedef->bottomtexture && line->backsector) {
         floor = min(line->backsector->floorheight, line->frontsector->floorheight);
         ceil = max(line->backsector->floorheight, line->frontsector->floorheight);
@@ -636,7 +638,7 @@ int R_SegToPoly (vertex3_t *vert, poly3_t *poly, seg_vis_t *seg)
         pcount += R_GeneratePoly(line, &vert[vcount], &poly[pcount], floor, ceil - floor, line->sidedef->midtexture);
         vcount += pcount * 2;
     }
-    printf("%s()--- pcount=%d\n", __func__, pcount);
+
     return pcount;
 }
 

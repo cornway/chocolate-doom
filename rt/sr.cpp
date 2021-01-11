@@ -81,6 +81,8 @@ struct VertexRef {
     unsigned texcoordIndex;
 };
 
+struct Core;
+
 SR_Mapper_t g_mapper = nullptr;
 
 class PixelShader : public PixelShaderBase<PixelShader> {
@@ -137,7 +139,8 @@ public:
 struct Core {
     Rasterizer r;
     VertexProcessor *v;
-    Core (SR_Mapper_t mapper, int w, int h) : mapper(mapper) {
+    int w, h;
+    Core (SR_Mapper_t mapper, int w, int h) : farplane(100000.0f), w(w), h(h), mapper(mapper) {
 
         v = new VertexProcessor(&r);
 
@@ -149,7 +152,7 @@ struct Core {
         v->setCullMode(CullMode::CW);
         v->setVertexShader<VertexShader>();
 
-        perspectiveMatrix = vmath::perspective_matrix(60.0f, 4.0f / 3.0f, 0.1f, 1000.0f);
+        perspectiveMatrix = vmath::perspective_matrix(60.0f, 4.0f / 3.0f, 0.1f, farplane);
     }
 
     ~Core () {
@@ -160,13 +163,8 @@ struct Core {
         VertexArrayData vd;
         int pcnt = 0, i;
 
-        std::cout << __func__ << "+++\n";
-
         idata.clear();
         vdata.clear();
-
-        //ObjData::loadFromString(tempobj, sizeof(tempobj) / sizeof(tempobj[0])).toVertexArray(vdata, idata);
-        //return;
 
         for (i = 0, pcnt = 0; pcnt < poly_cnt; i += 3, pcnt++) {
             vd.vertex = poly->v1;
@@ -188,13 +186,6 @@ struct Core {
             assert(poly->data);
             textures.push_back(poly->data);
 
-            std::cout << __func__ << "():" << i << "; " << poly->v1.x << " " << poly->v1.y << " " << poly->v1.z << "\n";
-            std::cout << __func__ << "():" << i+1 << "; " << poly->v2.x << " " << poly->v2.y << " " << poly->v2.z << "\n";
-            std::cout << __func__ << "():" << i+2 << "; " << poly->v3.x << " " << poly->v3.y << " " << poly->v3.z << "\n";
-
-            std::cout << __func__ << "():" << i << "; " << poly->t1.x << " " << poly->t1.y << "\n";
-            std::cout << __func__ << "():" << i+1 << "; " << poly->t2.x << " " << poly->t2.y  << "\n";
-            std::cout << __func__ << "():" << i+2 << "; " << poly->t3.x << " " << poly->t3.y << "\n";
             poly++;
         }
 
@@ -224,6 +215,7 @@ private:
     std::vector<int> idata;
     std::vector<void *> textures;
     SR_Mapper_t mapper;
+    float farplane;
 }*core;
 
 

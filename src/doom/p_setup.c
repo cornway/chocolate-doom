@@ -566,8 +566,18 @@ void P_CalcLines (void)
 {
     int i;
     line_t *li = &lines[0];
+    float abs_dx, abs_dy;
     for (i = 0; i < numlines; i++) {
-        li->length = sqrt(ToFloat(FixedMul(li->dx, li->dx) + FixedMul(li->dy, li->dy)));
+        abs_dx = abs(ToFloat(li->dx));
+        abs_dy = abs(ToFloat(li->dy));
+
+        if (!abs_dx) {
+            li->length = abs_dy;
+        } else if (!abs_dy) {
+            li->length = abs_dx;
+        } else {
+            li->length = sqrt(abs_dx * abs_dx + abs_dy * abs_dy);
+        }
         li++;
     }
 }
