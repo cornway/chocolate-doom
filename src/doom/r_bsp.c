@@ -554,20 +554,27 @@ void R_Subsector (view_t *view, int num)
         I_Error("R_Subsector: solidsegs overflow (vanilla may crash here)\n");
 }
 
-static inline void R_PolyToTexCord (poly3_t *poly, int x0, int y0, int x1, int y1, int x2, int y2)
+static inline void R_PolyToTexCord (poly3_t *poly, vertex2_t v1, vertex2_t v2, vertex2_t v3)
 {
-    poly->tv1.x = x0;
-    poly->tv1.y = y0;
+    poly->tv1.x = v1.x;
+    poly->tv1.y = v1.y;
 
-    poly->tv2.x = x1;
-    poly->tv2.y = y1;
+    poly->tv2.x = v2.x;
+    poly->tv2.y = v2.y;
 
-    poly->tv3.x = x2;
-    poly->tv3.y = y2;
+    poly->tv3.x = v3.x;
+    poly->tv3.y = v3.y;
 }
 
 static int R_GeneratePoly (seg_t *line, vertex3_t *v, poly3_t poly[2], fixed_t floor, fixed_t height, int texnum)
 {
+    float flength = line->linedef->length;
+    float fheight = ToFloat(height);
+    const vertex2_t vt[]= {{0, 0}, {flength, 0}, {0, fheight}, {flength, fheight}};
+    const int cw_dir[] = {0, 1, 2, 2, 1, 3};
+    const int ccw_dir[] = {0, 2, 1, 2, 3, 1};
+    const int *dir;
+
     v[0].x = line->v1->x;
     v[0].y = line->v1->y;
     v[0].z = floor;
@@ -584,19 +591,21 @@ static int R_GeneratePoly (seg_t *line, vertex3_t *v, poly3_t poly[2], fixed_t f
     v[3].y = line->v2->y;
     v[3].z = floor + height;
 
-    poly[0].v1 = v[0];
-    poly[0].v2 = v[1];
-    poly[0].v3 = v[2];
+    dir = cw_dir;
 
-    poly[1].v1 = v[2];
-    poly[1].v2 = v[1];
-    poly[1].v3 = v[3];
+    poly[0].v1 = v[dir[0]];
+    poly[0].v2 = v[dir[1]];
+    poly[0].v3 = v[dir[2]];
+
+    poly[1].v1 = v[dir[3]];
+    poly[1].v2 = v[dir[4]];
+    poly[1].v3 = v[dir[5]];
+
+    R_PolyToTexCord(&poly[0], vt[dir[0]], vt[dir[1]], vt[dir[2]]);
+    R_PolyToTexCord(&poly[1], vt[dir[3]], vt[dir[4]], vt[dir[5]]);
 
     poly[0].texture = texnum;
     poly[1].texture = texnum;
-
-    R_PolyToTexCord(&poly[0], 0, 0, 0, 128, 128, 0);
-    R_PolyToTexCord(&poly[1], 128, 0, 0, 128, 128, 128);
 
     return 2;
 }
@@ -659,17 +668,6 @@ void R_TransformPoly (Poly3f_t *dest, poly3_t *src, int cnt)
     }
 }
 
-void R_ProjectBSP (view_t *view, void (*h) (view_t *view, seg_vis_t *seg) )
-{
-    int count = sscount;
-    seg_vis_t *seg = segs_vis;
-
-    while (count--) {
-        h(view, seg);
-        seg++;
-    }
-}
-
 void R_RenderWorld (view_t *view)
 {
     int seg_count = sscount, in_poly_cnt = 0, out_poly_cnt = 0;
@@ -692,6 +690,16 @@ void R_RenderWorld (view_t *view)
     printf("%s() ---\n", __func__);
 }
 
+void R_ProjectBSP (view_t *view, void (*h) (view_t *view, seg_vis_t *seg) )
+{
+    int count = sscount;
+    seg_vis_t *seg = segs_vis;
+
+    while (count--) {
+        h(view, seg);
+        seg++;
+    }
+}
 
 //
 // RenderBSPNode

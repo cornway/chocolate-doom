@@ -562,7 +562,15 @@ void P_LoadBlockMap (int lump)
     memset(blocklinks, 0, count);
 }
 
-
+void P_CalcLines (void)
+{
+    int i;
+    line_t *li = &lines[0];
+    for (i = 0; i < numlines; i++) {
+        li->length = sqrt(ToFloat(FixedMul(li->dx, li->dx) + FixedMul(li->dy, li->dy)));
+        li++;
+    }
+}
 
 //
 // P_GroupLines
@@ -841,6 +849,7 @@ P_SetupLevel
     P_LoadSegs (lumpnum+ML_SEGS);
 
     P_GroupLines ();
+    P_CalcLines();
     P_LoadReject (lumpnum+ML_REJECT);
 
     bodyqueslot = 0;
