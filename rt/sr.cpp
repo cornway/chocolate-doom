@@ -81,67 +81,61 @@ struct VertexRef {
     unsigned texcoordIndex;
 };
 
-struct Core;
-
-SR_Mapper_t g_mapper = nullptr;
-
-class PixelShader : public PixelShaderBase<PixelShader> {
-public:
-    static const bool InterpolateZ = false;
-    static const bool InterpolateW = false;
-    static const int AVarCount = 0;
-    static const int PVarCount = 2;
-
-    static void drawPixel(const PixelData &p)
-    {
-        int tx = p.pvar[0];
-        int ty = p.pvar[1];
-
-        //std::cout << __func__ << "(): " << p.x << " "  << p.y << " " << tx << " "  << ty << " "  << "\n";
-
-        assert(p.texture);
-        g_mapper(p.texture, tx, ty, p.x, p.y);
-
-        //Uint32 *texBuffer = (Uint32*)((Uint8 *)texture->pixels + (size_t)ty * (size_t)texture->pitch + (size_t)tx * 4);
-        //Uint32 *screenBuffer = (Uint32*)((Uint8 *)surface->pixels + (size_t)p.y * (size_t)surface->pitch + (size_t)p.x * 4);
-
-        //*screenBuffer = *texBuffer;
-    }
-};
-
-static mat4f modelViewProjectionMatrix;
-static mat4f perspectiveMatrix;
-
-class VertexShader : public VertexShaderBase<VertexShader> {
-public:
-    static const int AttribCount = 1;
-    static const int AVarCount = 0;
-    static const int PVarCount = 2;
-
-    static void processVertex(VertexShaderInput in, VertexShaderOutput *out)
-    {
-        const VertexArrayData *data = (const VertexArrayData*)(in[0]);
-        vec3f vertex(data->vertex);
-        vec2f texcoord(data->texcoord);
-
-        vec4f position = modelViewProjectionMatrix * vec4f(vertex, 1.0f);
-
-        out->x = position.x;
-        out->y = position.y;
-        out->z = position.z;
-        out->w = position.w;
-        out->pvar[0] = texcoord.x;
-        out->pvar[1] = texcoord.y;
-        out->texture = data->texture;
-    }
-};
-
-
 struct Core {
+    static mat4f modelViewProjectionMatrix;
+    static mat4f perspectiveMatrix;
+
+    static SR_Mapper_t g_mapper;
+    static float *zbuffer;
+    static int w, h;
+
     Rasterizer r;
     VertexProcessor *v;
-    int w, h;
-    Core (SR_Mapper_t mapper, int w, int h) : farplane(100000.0f), w(w), h(h), mapper(mapper) {
+    class PixelShader : public PixelShaderBase<PixelShader> {
+    public:
+        static const bool InterpolateZ = false;
+        static const bool InterpolateW = false;
+        static const int AVarCount = 0;
+        static const int PVarCount = 2;
+
+        static void drawPixel(const PixelData &p)
+        {
+            int tx = p.pvar[0];
+            int ty = p.pvar[1];
+
+            //std::cout << __func__ << "(): " << p.x << " "  << p.y << " " << tx << " "  << ty << " "  << "\n";
+
+            assert(p.texture);
+            if (Core::zbuffer[p.x + p.y * Core::w] > p.w) {
+                Core::zbuffer[p.x + p.y * Core::w] = p.w;
+                Core::g_mapper(p.texture, tx, ty, p.x, p.y);
+            }
+        }
+    };
+    class VertexShader : public VertexShaderBase<VertexShader> {
+    public:
+        static const int AttribCount = 1;
+        static const int AVarCount = 0;
+        static const int PVarCount = 2;
+    
+        static void processVertex(VertexShaderInput in, VertexShaderOutput *out)
+        {
+            const VertexArrayData *data = (const VertexArrayData*)(in[0]);
+            vec3f vertex(data->vertex);
+            vec2f texcoord(data->texcoord);
+    
+            vec4f position = modelViewProjectionMatrix * vec4f(vertex, 1.0f);
+    
+            out->x = position.x;
+            out->y = position.y;
+            out->z = position.z;
+            out->w = position.w;
+            out->pvar[0] = texcoord.x;
+            out->pvar[1] = texcoord.y;
+            out->texture = data->texture;
+        }
+    };
+    Core (SR_Mapper_t mapper, int w, int h) : farplane(100000.0f), mapper(mapper) {
 
         v = new VertexProcessor(&r);
 
@@ -154,10 +148,17 @@ struct Core {
         v->setVertexShader<VertexShader>();
 
         perspectiveMatrix = vmath::perspective_matrix(60.0f, 4.0f / 3.0f, 0.1f, farplane);
+
+        g_mapper = mapper;
+        zbuffer = new float[w*h];
+        zbuffClear();
+        Core::w = w;
+        Core::h = h;
     }
 
     ~Core () {
         delete v;
+        delete zbuffer;
     }
 
     void LoadVert (Poly3f_t *poly, int poly_cnt) {
@@ -194,6 +195,7 @@ struct Core {
 
     }
     void Render () {
+        zbuffClear();
         v->setVertexAttribPointer(0, sizeof(VertexArrayData), &vdata[0]);
         v->drawElements(DrawMode::Triangle, idata.size(), &idata[0]);
     }
@@ -218,13 +220,23 @@ private:
     std::vector<int> idata;
     SR_Mapper_t mapper;
     float farplane;
+
+    void zbuffClear () {
+        for (int i = 0; i < w*h; i++)
+            zbuffer[i] = farplane;
+    }
 }*core;
 
+mat4f Core::modelViewProjectionMatrix;
+mat4f Core::perspectiveMatrix;
+int Core::w;
+int Core::h;
+SR_Mapper_t Core::g_mapper;
+float *Core::zbuffer;
 
 void SR_SetupCore (SR_Mapper_t mapper, int w, int h)
 {
     core = new Core(mapper, w, h);
-    g_mapper = mapper;
 }
 
 void SR_DestroyCore (void)
