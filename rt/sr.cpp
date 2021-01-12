@@ -71,8 +71,8 @@ class vec2f : public vmath::vec2<float> {
 
 struct VertexArrayData {
     vec3f vertex;
-    vec3f normal;
     vec2f texcoord;
+    void *texture;
 };
 
 struct VertexRef {
@@ -132,6 +132,7 @@ public:
         out->w = position.w;
         out->pvar[0] = texcoord.x;
         out->pvar[1] = texcoord.y;
+        out->texture = data->texture;
     }
 };
 
@@ -167,24 +168,26 @@ struct Core {
         vdata.clear();
 
         for (i = 0, pcnt = 0; pcnt < poly_cnt; i += 3, pcnt++) {
+            assert(poly->data);
+
             vd.vertex = poly->v1;
             vd.texcoord = poly->t1;
+            vd.texture = poly->data;
             vdata.push_back(vd);
 
             vd.vertex = poly->v2;
             vd.texcoord = poly->t2;
+            vd.texture = poly->data;
             vdata.push_back(vd);
 
             vd.vertex = poly->v3;
             vd.texcoord = poly->t3;
+            vd.texture = poly->data;
             vdata.push_back(vd);
 
             idata.push_back(i);
             idata.push_back(i+1);
             idata.push_back(i+2);
-
-            assert(poly->data);
-            textures.push_back(poly->data);
 
             poly++;
         }
@@ -192,7 +195,7 @@ struct Core {
     }
     void Render () {
         v->setVertexAttribPointer(0, sizeof(VertexArrayData), &vdata[0]);
-        v->drawElements(DrawMode::Triangle, idata.size(), &idata[0], &textures[0]);
+        v->drawElements(DrawMode::Triangle, idata.size(), &idata[0]);
     }
 
     void SetView (Vertex3f_t *pos, Vertex3f_t *dirf) {
@@ -213,7 +216,6 @@ struct Core {
 private:
     std::vector<VertexArrayData> vdata;
     std::vector<int> idata;
-    std::vector<void *> textures;
     SR_Mapper_t mapper;
     float farplane;
 }*core;

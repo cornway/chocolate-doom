@@ -117,34 +117,31 @@ public:
 		(this->*m_triangleFunc)(texture, v0, v1, v2);
 	}
 
-	void drawPointList(const RasterizerVertex *vertices, void **textures, const int *indices, size_t indexCount) const
+	void drawPointList(const RasterizerVertex *vertices, const int *indices, size_t indexCount) const
 	{
 		for (size_t i = 0; i < indexCount; ++i) {
 			if (indices[i] == -1)
 				continue;
-			drawPoint(textures[i], vertices[indices[i]]);
+			drawPoint(vertices[indices[i]].texture, vertices[indices[i]]);
 		}
 	}
 
-	void drawLineList(const RasterizerVertex *vertices, void **textures, const int *indices, size_t indexCount) const
+	void drawLineList(const RasterizerVertex *vertices, const int *indices, size_t indexCount) const
 	{
 		for (size_t i = 0; i + 2 <= indexCount; i += 2) {
 			if (indices[i] == -1)
 				continue;
-			drawLine(textures[i / 2], vertices[indices[i]], vertices[indices[i + 1]]);
+			drawLine(vertices[indices[i]].texture, vertices[indices[i]], vertices[indices[i + 1]]);
 		}
 	}
 
-	void drawTriangleList(const RasterizerVertex *vertices, void **textures, const int *indices, size_t indexCount) const
+	void drawTriangleList(const RasterizerVertex *vertices, const int *indices, size_t indexCount) const
 	{
 		void *texture = NULL;
 		for (size_t i = 0; i + 3 <= indexCount; i += 3) {
 			if (indices[i] == -1)
 				continue;
-			if (textures) {
-				texture = textures[i / 3];
-			}
-			drawTriangle(texture, vertices[indices[i]], vertices[indices[i + 1]], vertices[indices[i + 2]]);
+			drawTriangle(vertices[indices[i]].texture, vertices[indices[i]], vertices[indices[i + 1]], vertices[indices[i + 2]]);
 		}
 	}
 

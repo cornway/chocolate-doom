@@ -69,6 +69,7 @@ void PolyClipper::clipToPlane(float a, float b, float c, float d)
 			float t = dp < 0 ? dpPrev / (dpPrev - dp) : -dpPrev / (dp - dpPrev);
 
 			VertexShaderOutput vOut = Helper::interpolateVertex((*m_vertices)[idxPrev], (*m_vertices)[idx], t, m_avarCount, m_pvarCount);
+			vOut.texture = v->texture;
 			m_vertices->push_back(vOut);
 			m_indicesOut->push_back((int)(m_vertices->size() - 1));
 		}

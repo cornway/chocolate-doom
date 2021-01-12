@@ -1002,8 +1002,8 @@ unsigned int R_DrawTexPix (void *data, int u, int v, int x, int y)
 
     if (texnum) {
         midtexture = texturetranslation[texnum];
-        dc_source = R_GetColumn(midtexture, v);
-        pix = dc_source[u % 128];
+        dc_source = R_GetColumn(midtexture, u);
+        pix = dc_source[128 - v % 128];
     }
 
     //printf("%s() : u=%d, v=%d, x=%d, y=%d, pic=%d\n", __func__, u, v, x, y, midtexture);

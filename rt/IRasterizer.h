@@ -50,6 +50,9 @@ struct RasterizerVertex {
 
 	/// Perspective variables.
 	float pvar[MaxPVars];
+
+	/// User texture data.
+	void *texture;
 };
 
 /// Interface for the rasterizer used by the VertexProcessor.
@@ -59,15 +62,15 @@ public:
 
 	/// Draw a list of points.
 	/** Points with indices == -1 will be ignored. */
-	virtual void drawPointList(const RasterizerVertex *vertices, void **textures, const int *indices, size_t indexCount) const = 0;
+	virtual void drawPointList(const RasterizerVertex *vertices, const int *indices, size_t indexCount) const = 0;
 
 	/// Draw a list if lines.
 	/** Lines  with indices == -1 will be ignored. */
-	virtual void drawLineList(const RasterizerVertex *vertices, void **textures, const int *indices, size_t indexCount) const = 0;
+	virtual void drawLineList(const RasterizerVertex *vertices, const int *indices, size_t indexCount) const = 0;
 
 	/// Draw a list of triangles.
 	/** Triangles  with indices == -1 will be ignored. */
-	virtual void drawTriangleList(const RasterizerVertex *vertices, void **textures, const int *indices, size_t indexCount) const = 0;
+	virtual void drawTriangleList(const RasterizerVertex *vertices, const int *indices, size_t indexCount) const = 0;
 };
 
 } // end namespace swr

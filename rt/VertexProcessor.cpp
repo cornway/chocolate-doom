@@ -75,11 +75,10 @@ void VertexProcessor::setVertexAttribPointer(int index, int stride, const void *
 	#pragma warning (pop)
 }
 
-void VertexProcessor::drawElements(DrawMode mode, size_t count, int *indices, void **textures) const
+void VertexProcessor::drawElements(DrawMode mode, size_t count, int *indices) const
 {
 	m_verticesOut.clear();
 	m_indicesOut.clear();
-    m_textures.clear();
 
 	// TODO: Max 1024 primitives per batch.
 	VertexCache vCache;
@@ -89,9 +88,6 @@ void VertexProcessor::drawElements(DrawMode mode, size_t count, int *indices, vo
 		int index = indices[i];
 		int outputIndex = vCache.lookup(index);
 
-		if (textures) {
-			 m_textures.push_back(textures[i/3]);
-		}
 		if (outputIndex != -1)
 		{
 			m_indicesOut.push_back(outputIndex);
@@ -116,7 +112,6 @@ void VertexProcessor::drawElements(DrawMode mode, size_t count, int *indices, vo
 			processPrimitives(mode);
 			m_verticesOut.clear();
 			m_indicesOut.clear();
-            m_textures.clear();
 			vCache.clear();
 		}
 	}
@@ -234,7 +229,6 @@ void VertexProcessor::clipTriangles() const
 		int i0 = m_indicesOut[i];
 		int i1 = m_indicesOut[i + 1];
 		int i2 = m_indicesOut[i + 2];
-		int texid = i / 3;
 		int clipMask = m_clipMask[i0] | m_clipMask[i1] | m_clipMask[i2];
 
 		polyClipper.init(&m_verticesOut, i0, i1, i2, m_avarCount, m_pvarCount);
@@ -263,9 +257,6 @@ void VertexProcessor::clipTriangles() const
 			m_indicesOut.push_back(indices[0]);
 			m_indicesOut.push_back(indices[idx - 1]);
 			m_indicesOut.push_back(indices[idx]);
-			m_textures.push_back(m_textures[texid]);
-			m_textures.push_back(m_textures[texid]);
-			m_textures.push_back(m_textures[texid]);
 		}
 	}
 }
@@ -309,18 +300,17 @@ int VertexProcessor::primitiveCount(DrawMode mode) const
 
 void VertexProcessor::drawPrimitives(DrawMode mode) const
 {
-	assert(m_textures.size() == m_indicesOut.size());
 	switch (mode)
 	{
 		case DrawMode::Triangle:
 			cullTriangles();
-			m_rasterizer->drawTriangleList(&m_verticesOut[0], &m_textures[0], &m_indicesOut[0], m_indicesOut.size());
+			m_rasterizer->drawTriangleList(&m_verticesOut[0], &m_indicesOut[0], m_indicesOut.size());
 			break;
 		case DrawMode::Line:
-			m_rasterizer->drawLineList(&m_verticesOut[0], &m_textures[0], &m_indicesOut[0], m_indicesOut.size());
+			m_rasterizer->drawLineList(&m_verticesOut[0], &m_indicesOut[0], m_indicesOut.size());
 			break;
 		case DrawMode::Point:
-			m_rasterizer->drawPointList(&m_verticesOut[0], &m_textures[0], &m_indicesOut[0], m_indicesOut.size());
+			m_rasterizer->drawPointList(&m_verticesOut[0], &m_indicesOut[0], m_indicesOut.size());
 			break;
 	}
 }
