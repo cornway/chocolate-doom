@@ -131,6 +131,7 @@ typedef	struct
     void*	specialdata;
 
     int			linecount;
+    int         r_prepared;
     struct line_s**	lines;	// [linecount] size
     
 } sector_t;
