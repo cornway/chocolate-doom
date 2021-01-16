@@ -616,10 +616,11 @@ static int R_LineToPoly (seg_t *line, vertex3_t *v, poly3_t poly[2], fixed_t flo
 
 #define MAX_LINES (64)
 
-typedef struct line_node_s {
-    struct line_node_s *next, *prev;
+typedef struct vert_node_s {
+    struct vert_node_s *next, *prev;
+    struct vert_node_s *reflex;
     vertex3_t *v;
-} line_node_t;
+} vert_node_t;
 
 static void linesCopy (line_t **dest, line_t **src, int lines_count, fixed_t *minx, fixed_t *miny)
 {
@@ -684,7 +685,7 @@ static void linesToVertsSort (line_t **lines, vertex_t *verts, int lines_count)
         matches++;
         missing = 0;
     }
-static void lineNodesPrepare (line_node_t *dest, vertex3_t *verts, int lines_count)
+static void lineNodesPrepare (vert_node_t *dest, vertex3_t *verts, int lines_count)
 {
     int i;
 
@@ -703,7 +704,7 @@ static inline void printVert3 (vertex3_t *v)
     printf("Vert= %d %d %d\n", v->x >> FRACBITS, v->y >> FRACBITS, v->z >> FRACBITS);
 }
 
-static void lineNodesAssign (line_node_t *dest, vertex_t *verts, int lines_count, fixed_t height)
+static void lineNodesAssign (vert_node_t *dest, vertex_t *verts, int lines_count, fixed_t height)
 {
     int i;
 
@@ -730,30 +731,72 @@ static void setupPoly (poly3_t *poly, vertex3_t *v1, vertex3_t *v2, vertex3_t *v
     poly->texture = texture;
 }
 
-static int lineNodesToPolys (poly3_t *polys, line_node_t *nodes, int lines_count, fixed_t minx, fixed_t miny, int texture, boolean isFloor)
+static vert_node_t *vertNodesToReflex (vert_node_t *nodes, int *verts_count)
 {
-    line_node_t *lnode, *node, *rnode;
-    const int dir[] = {2, 1, 0, 3, 1, 2};
-    int i, polys_cnt = 0;
+    vert_node_t *node = nodes, *first = nodes;
+    vert_node_t *lnode = node->prev, *rnode = node->next;
+    vert_node_t *reflex = NULL;
+    fixed_t cross;
+    vertex_t v2v1, v3v2;
+    int i = 0;
 
 
-    node = nodes;
-    lnode = nodes->prev;
-    rnode = node->next;
-    while (lnode->prev != rnode && rnode->next != lnode) {
-        if (isFloor)
-            setupPoly(&polys[polys_cnt], lnode->v, node->v, rnode->v, minx, miny, texture);
-        else
-            setupPoly(&polys[polys_cnt], rnode->v, node->v, lnode->v, minx, miny, texture);
-        polys_cnt++;
+    do {
 
-        lnode->next = rnode;
-        rnode->prev = lnode;
-        node = lnode;
-        lnode = lnode->prev;
+        v2v1.x = node->v->x - lnode->v->x;
+        v2v1.y = node->v->y - lnode->v->y;
+
+        v3v2.x = rnode->v->x - node->v->x;
+        v3v2.y = rnode->v->y - node->v->y;
+
+
+        cross = FixedMul(v2v1.x, v3v2.y) - FixedMul(v2v1.y, v3v2.x);
+        node->reflex = NULL;
+        if (cross > 0) {
+            node->reflex = reflex;
+            reflex = node;
+        }
+        if (cross == 0) {
+            lnode->next = rnode;
+            rnode->prev = lnode;
+            *verts_count--;
+        } else {
+            lnode = node;
+        }
+        node = rnode;
+        rnode = rnode->next;
+        i++;
+    } while (node != first && i < *verts_count);
+    return reflex;
+}
+
+static int lineNodesToPolys (poly3_t *polys, vert_node_t *nodes, int verts_count, fixed_t minx, fixed_t miny, int texture, boolean isFloor)
+{
+    vert_node_t *reflex;
+    int polys_cnt = 0;
+
+
+    while (verts_count >= 3) {
+        reflex = vertNodesToReflex(nodes, &verts_count);
+        if (!reflex) {
+            break;
+        }
+        while (reflex) {
+            if (isFloor)
+                setupPoly(&polys[polys_cnt], reflex->prev->v, reflex->v, reflex->next->v, minx, miny, texture);
+            else
+                setupPoly(&polys[polys_cnt], reflex->next->v, reflex->v, reflex->prev->v, minx, miny, texture);
+            polys_cnt++;
+
+            reflex->prev->next = reflex->next;
+            reflex->next->prev = reflex->prev;
+            verts_count--;
+
+            reflex = reflex->reflex;
+        }
     }
-    setupPoly(&polys[polys_cnt], lnode->v, node->v, rnode->v, minx, miny, texture);
-    polys_cnt++;
+    //setupPoly(&polys[polys_cnt], node->v, node->v, rnode->v, minx, miny, texture);
+    //polys_cnt++;
     return polys_cnt;
 }
 
@@ -761,7 +804,7 @@ static int R_GroupLines (poly3_t *polys, line_t **lines, int lines_count, fixed_
 {
     fixed_t minx, miny;
     line_t *lines_buf[MAX_LINES];
-    line_node_t nodes[MAX_LINES];
+    vert_node_t nodes[MAX_LINES];
     vertex3_t verts[MAX_LINES*2];
     vertex_t verts2[MAX_LINES*2];
     int i;
