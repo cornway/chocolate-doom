@@ -99,8 +99,8 @@ void R_FillBackScreen (void);
 // If the view size is not full screen, draws a border around it.
 void R_DrawViewBorder (void);
 
-pix_t R_MapTexture (seg_vis_t *seg, poly3_t *poly, int u, int v);
-unsigned int R_DrawTexPix (void *_seg, int u, int v, int x, int y);
-
+unsigned int R_DrawSolidPoly (pixelShader_t *shader, int u, int v, int x, int y);
+unsigned int R_DrawMaskedPoly (pixelShader_t *shader, int x, int y, int u, int v);
+unsigned int R_DrawFloorCeilPoly (pixelShader_t *shader, int x, int y, int u, int v);
 
 #endif

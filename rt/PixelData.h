@@ -26,6 +26,7 @@ SOFTWARE.
 
 /** @file */
 
+#include "sr.h"
 #include "IRasterizer.h"
 #include "TriangleEquations.h"
 
@@ -56,14 +57,14 @@ struct PixelData {
 	// Used internally.
 	float pvarTemp[MaxPVars];
 
-    void *texture;
+    const pixelShader *shader;
 
 	PixelData() {}
 
 	// Initialize pixel data for the given pixel coordinates.
-	void init(const TriangleEquations &eqn, void *texture, float x, float y, int aVarCount, int pVarCount, bool interpolateZ, bool interpolateW)
+	void init(const TriangleEquations &eqn, const pixelShader *shader, float x, float y, int aVarCount, int pVarCount, bool interpolateZ, bool interpolateW)
 	{
-	    this->texture = texture;
+	    this->shader = shader;
 		if (interpolateZ)
 			z = eqn.z.evaluate(x, y);
 		

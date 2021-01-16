@@ -72,7 +72,7 @@ class vec2f : public vmath::vec2<float> {
 struct VertexArrayData {
     vec3f vertex;
     vec2f texcoord;
-    void *texture;
+    pixelShader_t shader;
 };
 
 struct VertexRef {
@@ -85,7 +85,6 @@ struct Core {
     static mat4f modelViewProjectionMatrix;
     static mat4f perspectiveMatrix;
 
-    static SR_Mapper_t g_mapper;
     static float *zbuffer;
     static int w, h;
 
@@ -103,12 +102,11 @@ struct Core {
             int tx = p.pvar[0];
             int ty = p.pvar[1];
 
-            //std::cout << __func__ << "(): " << p.x << " "  << p.y << " " << tx << " "  << ty << " "  << "\n";
-
-            assert(p.texture);
+            assert(p.shader);
             if (Core::zbuffer[p.x + p.y * Core::w] > p.w) {
-                Core::zbuffer[p.x + p.y * Core::w] = p.w;
-                Core::g_mapper(p.texture, tx, ty, p.x, p.y);
+                if (p.shader->draw(p.shader, p.x, p.y, tx, ty)) {
+                    Core::zbuffer[p.x + p.y * Core::w] = p.w;
+                }
             }
         }
     };
@@ -132,10 +130,10 @@ struct Core {
             out->w = position.w;
             out->pvar[0] = texcoord.x;
             out->pvar[1] = texcoord.y;
-            out->texture = data->texture;
+            out->shader = data->shader;
         }
     };
-    Core (SR_Mapper_t mapper, int w, int h) : farplane(100000.0f), mapper(mapper) {
+    Core (int w, int h) : farplane(100000.0f) {
 
         v = new VertexProcessor(&r);
 
@@ -149,7 +147,6 @@ struct Core {
 
         perspectiveMatrix = vmath::perspective_matrix(60.0f, 4.0f / 3.0f, 0.1f, farplane);
 
-        g_mapper = mapper;
         zbuffer = new float[w*h];
         zbuffClear();
         Core::w = w;
@@ -169,21 +166,22 @@ struct Core {
         vdata.clear();
 
         for (i = 0, pcnt = 0; pcnt < poly_cnt; i += 3, pcnt++) {
-            assert(poly->data);
+            assert(poly->shader.draw);
+            assert(poly->shader.texture);
 
             vd.vertex = poly->v1;
             vd.texcoord = poly->t1;
-            vd.texture = poly->data;
+            vd.shader = poly->shader;
             vdata.push_back(vd);
 
             vd.vertex = poly->v2;
             vd.texcoord = poly->t2;
-            vd.texture = poly->data;
+            vd.shader = poly->shader;
             vdata.push_back(vd);
 
             vd.vertex = poly->v3;
             vd.texcoord = poly->t3;
-            vd.texture = poly->data;
+            vd.shader = poly->shader;
             vdata.push_back(vd);
 
             idata.push_back(i);
@@ -218,7 +216,6 @@ struct Core {
 private:
     std::vector<VertexArrayData> vdata;
     std::vector<int> idata;
-    SR_Mapper_t mapper;
     float farplane;
 
     void zbuffClear () {
@@ -231,12 +228,11 @@ mat4f Core::modelViewProjectionMatrix;
 mat4f Core::perspectiveMatrix;
 int Core::w;
 int Core::h;
-SR_Mapper_t Core::g_mapper;
 float *Core::zbuffer;
 
-void SR_SetupCore (SR_Mapper_t mapper, int w, int h)
+void SR_SetupCore (int w, int h)
 {
-    core = new Core(mapper, w, h);
+    core = new Core(w, h);
 }
 
 void SR_DestroyCore (void)

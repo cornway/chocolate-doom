@@ -608,8 +608,11 @@ static int R_LineToPoly (seg_t *line, vertex3_t *v, poly3_t poly[2], fixed_t flo
     R_PolyToTexCord(&poly[0], vt[dir[0]], vt[dir[1]], vt[dir[2]]);
     R_PolyToTexCord(&poly[1], vt[dir[3]], vt[dir[4]], vt[dir[5]]);
 
-    poly[0].texture = texnum;
-    poly[1].texture = texnum;
+    poly[0].shader.texture = texnum;
+    poly[0].shader.draw = R_DrawSolidPoly;
+
+    poly[1].shader.texture = texnum;
+    poly[1].shader.draw = R_DrawSolidPoly;
 
     return 2;
 }
@@ -685,6 +688,8 @@ static void linesToVertsSort (line_t **lines, vertex_t *verts, int lines_count)
         matches++;
         missing = 0;
     }
+}
+
 static void lineNodesPrepare (vert_node_t *dest, vertex3_t *verts, int lines_count)
 {
     int i;
@@ -728,7 +733,8 @@ static void setupPoly (poly3_t *poly, vertex3_t *v1, vertex3_t *v2, vertex3_t *v
     poly->tv3.x = ToFloat(poly->v3.x - minx);
     poly->tv3.y = ToFloat(poly->v3.y - miny);
 
-    poly->texture = texture;
+    poly->shader.texture = texture;
+    poly->shader.draw = R_DrawFloorCeilPoly;
 }
 
 static vert_node_t *vertNodesToReflex (vert_node_t *nodes, int *verts_count)
@@ -890,7 +896,7 @@ void R_TransformPoly (Poly3f_t *dest, poly3_t *src, int cnt)
         dest->t3.x = src->tv3.x;
         dest->t3.y = src->tv3.y;
 
-        dest->data = (void *)src->texture;
+        dest->shader = src->shader;
         dest++;
         src++;
     }

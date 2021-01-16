@@ -972,38 +972,21 @@ void R_DrawViewBorder (void)
     V_MarkRect (0,0,SCREENWIDTH, SCREENHEIGHT-SBARHEIGHT); 
 } 
 
-
-pix_t R_MapTexture (seg_vis_t *seg, poly3_t *poly, int u, int v)
-{
-    int x, y;
-    int midtexture = texturetranslation[seg->seg->sidedef->midtexture];
-    pix_t *dc_source;
-
-    x = u;
-    y = v;
-
-    x = x >> FRACBITS;
-    y = y >> FRACBITS;
-
-    printf("%s() : x=%d, y=%d, pic=%d\n", __func__, x, y, midtexture);
-
-    dc_source = R_GetColumn(midtexture, x % 128);
-
-    return dc_source[y % 128];
-}
-
 extern void I_DrawPix (int x, int y, unsigned int pix);
 
-unsigned int R_DrawTexPix (void *data, int u, int v, int x, int y)
+#define R_MAX_SEG_TEX_SIZE (128)
+#define R_MAX_FLOOR_TEX_SIZE (64)
+
+unsigned int R_DrawSolidPoly (pixelShader_t *shader, int x, int y, int u, int v)
 {
-    int midtexture = -1, texnum = (int)data;
+    int midtexture = -1, texnum = shader->texture;
     pix_t *dc_source;
     pix_t pix = (pix_t)-1;
 
     if (texnum) {
         midtexture = texturetranslation[texnum];
         dc_source = R_GetColumn(midtexture, u);
-        pix = dc_source[128 - v % 128];
+        pix = dc_source[R_MAX_SEG_TEX_SIZE - v % R_MAX_SEG_TEX_SIZE];
     }
 
     //printf("%s() : u=%d, v=%d, x=%d, y=%d, pic=%d\n", __func__, u, v, x, y, midtexture);
@@ -1011,6 +994,37 @@ unsigned int R_DrawTexPix (void *data, int u, int v, int x, int y)
     if (texnum) {
         I_DrawPix(x, y, pix);
     }
-    return pix;
+    return 1;
 }
+
+unsigned int R_DrawFloorCeilPoly (pixelShader_t *shader, int x, int y, int u, int v)
+{
+    int midtexture = -1, texnum = shader->texture;
+    pix_t *ds_source;
+    pix_t pix = (pix_t)-1;
+
+    if (texnum == skyflatnum) {
+        return 0;
+    }
+
+    if (texnum) {
+        int lumpnum = firstflat + flattranslation[texnum];
+        ds_source = W_CacheLumpNum(lumpnum, PU_STATIC);
+
+        pix = ds_source[u % R_MAX_FLOOR_TEX_SIZE + (v % R_MAX_FLOOR_TEX_SIZE) * R_MAX_FLOOR_TEX_SIZE];
+    }
+
+    //printf("%s() : u=%d, v=%d, x=%d, y=%d, pic=%d\n", __func__, u, v, x, y, midtexture);
+
+    if (texnum) {
+        I_DrawPix(x, y, pix);
+    }
+    return 1;
+}
+
+unsigned int R_DrawMaskedPoly (pixelShader_t *shader, int x, int y, int u, int v)
+{
+    return 0;
+}
+
 

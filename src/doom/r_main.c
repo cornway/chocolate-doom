@@ -776,7 +776,7 @@ void R_Init (void)
     R_InitTranslationTables ();
     printf (".");
     //RT_SetupCore(&rt_core, SCREENWIDTH, SCREENHEIGHT, FRACUNIT, ANG90, R_Malloc);
-    SR_SetupCore(R_DrawTexPix, SCREENWIDTH, SCREENHEIGHT);
+    SR_SetupCore(SCREENWIDTH, SCREENHEIGHT);
     I_AtExit(SR_DestroyCore, true);
     printf (".");
 	

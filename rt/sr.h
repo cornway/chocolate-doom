@@ -7,6 +7,11 @@
 
 typedef int Fixed_t;
 
+typedef struct pixelShader {
+    int texture;
+    unsigned int (*draw)(const struct pixelShader *shader, int x, int y, int tx, int ty);
+} pixelShader_t;
+
 typedef struct
 {
     Fixed_t	x;
@@ -23,7 +28,7 @@ typedef struct
 typedef struct {
     vertex3_t v1, v2, v3;
     vertex2_t tv1, tv2, tv3;
-    int texture;
+    pixelShader_t shader;
 } poly3_t;
 
 typedef struct {
@@ -34,15 +39,13 @@ typedef struct {
     float x, y;
 } Vertex2f_t;
 
-typedef unsigned int (*SR_Mapper_t) (void *, int, int, int, int);
-
 typedef struct Poly3f_s {
     Vertex3f_t v1, v2, v3;
     Vertex2f_t t1, t2, t3;
-    void *data;
+    pixelShader_t shader;
 } Poly3f_t;
 
-void SR_SetupCore (SR_Mapper_t mapper, int w, int h);
+void SR_SetupCore (int w, int h);
 void SR_DestroyCore (void);
 void SR_SetupCamera (Vertex3f_t *orig, Vertex3f_t *dir);
 void SR_LoadVert (Poly3f_t *poly, int poly_cnt);

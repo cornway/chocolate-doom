@@ -27,6 +27,7 @@ SOFTWARE.
 /** @file */ 
 
 #include <cstddef>
+#include "sr.h"
 
 namespace swr {
 
@@ -51,8 +52,8 @@ struct RasterizerVertex {
 	/// Perspective variables.
 	float pvar[MaxPVars];
 
-	/// User texture data.
-	void *texture;
+	/// User shader data.
+	pixelShader_t shader;
 };
 
 /// Interface for the rasterizer used by the VertexProcessor.
