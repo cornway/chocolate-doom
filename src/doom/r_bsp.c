@@ -625,25 +625,59 @@ typedef struct vert_node_s {
     vertex3_t *v;
 } vert_node_t;
 
-static void linesCopy (line_t **dest, line_t **src, int lines_count, fixed_t *minx, fixed_t *miny)
+typedef struct bbox_s {
+    fixed_t x1, y1, x2, y2;
+} bbox_t;
+
+static void bboxToVert (vertex3_t v[4], bbox_t *bbox)
+{
+    v[0].x = bbox->x1;
+    v[0].y = bbox->y1;
+
+    v[1].x = bbox->x2;
+    v[1].y = bbox->y1;
+
+    v[2].x = bbox->x2;
+    v[2].y = bbox->y2;
+
+    v[3].x = bbox->x1;
+    v[3].y = bbox->y2;
+}
+
+static void linesCopy (line_t **dest, line_t **src, int lines_count, bbox_t *bbox)
 {
     int i;
-    *minx = src[0]->v1->x;
-    *miny = src[0]->v1->y;
+    bbox->x1 = src[0]->v1->x;
+    bbox->y1 = src[0]->v1->y;
+    bbox->x2 = src[0]->v1->x;
+    bbox->y2 = src[0]->v1->y;
 
     for (i = 0; i < lines_count; i++) {
         dest[i] = src[i];
-        if (src[i]->v1->x < *minx) {
-            *minx = src[i]->v1->x;
+        if (src[i]->v1->x < bbox->x1) {
+            bbox->x1 = src[i]->v1->x;
         }
-        if (src[i]->v1->y < *miny) {
-            *miny = src[i]->v1->y;
+        if (src[i]->v1->y < bbox->y1) {
+            bbox->y1 = src[i]->v1->y;
         }
-        if (src[i]->v2->x < *minx) {
-            *minx = src[i]->v2->x;
+        if (src[i]->v2->x < bbox->x1) {
+            bbox->x1 = src[i]->v2->x;
         }
-        if (src[i]->v2->y < *miny) {
-            *miny = src[i]->v2->y;
+        if (src[i]->v2->y < bbox->y1) {
+            bbox->y1 = src[i]->v2->y;
+        }
+
+        if (src[i]->v1->x > bbox->x2) {
+            bbox->x2 = src[i]->v1->x;
+        }
+        if (src[i]->v1->y > bbox->y2) {
+            bbox->y2 = src[i]->v1->y;
+        }
+        if (src[i]->v2->x > bbox->x2) {
+            bbox->x2 = src[i]->v2->x;
+        }
+        if (src[i]->v2->y > bbox->y2) {
+            bbox->y2 = src[i]->v2->y;
         }
     }
 }
@@ -813,9 +847,13 @@ static int R_GroupLines (poly3_t *polys, line_t **lines, int lines_count, fixed_
     vert_node_t nodes[MAX_LINES];
     vertex3_t verts[MAX_LINES*2];
     vertex_t verts2[MAX_LINES*2];
+    bbox_t bbox;
     int i;
 
-    linesCopy(lines_buf, lines, lines_count, &minx, &miny);
+    linesCopy(lines_buf, lines, lines_count, &bbox);
+
+    minx = bbox.x1;
+    miny = bbox.y1;
     linesToVertsSort(lines_buf, verts2, lines_count);
     lineNodesPrepare(nodes, verts, lines_count);
     lineNodesAssign(nodes, verts2, lines_count, height);
