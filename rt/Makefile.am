@@ -26,5 +26,7 @@ VertexConfig.h \
 VertexProcessor.cpp \
 VertexProcessor.h \
 VertexProcessor.o \
-VertexShaderBase.h
+VertexShaderBase.h \
+Polygon2D.h \
+Polygon2D.cpp
 
