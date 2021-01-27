@@ -50,6 +50,8 @@ void SR_DestroyCore (void);
 void SR_SetupCamera (Vertex3f_t *orig, Vertex3f_t *dir);
 void SR_LoadVert (Poly3f_t *poly, int poly_cnt);
 void SR_Render (void);
+int SR_SplitPolygon2D (Poly3f_t *out, Vertex3f_t *in, unsigned int size);
+
 
 #ifdef __cplusplus
 }

@@ -977,7 +977,7 @@ extern void I_DrawPix (int x, int y, unsigned int pix);
 #define R_MAX_SEG_TEX_SIZE (128)
 #define R_MAX_FLOOR_TEX_SIZE (64)
 
-unsigned int R_DrawSolidPoly (pixelShader_t *shader, int x, int y, int u, int v)
+unsigned int R_DrawSolidPoly (const pixelShader_t *shader, int x, int y, int u, int v)
 {
     int midtexture = -1, texnum = shader->texture;
     pix_t *dc_source;
@@ -997,9 +997,9 @@ unsigned int R_DrawSolidPoly (pixelShader_t *shader, int x, int y, int u, int v)
     return 1;
 }
 
-unsigned int R_DrawFloorCeilPoly (pixelShader_t *shader, int x, int y, int u, int v)
+unsigned int R_DrawFloorCeilPoly (const pixelShader_t *shader, int x, int y, int u, int v)
 {
-    int midtexture = -1, texnum = shader->texture;
+    int texnum = shader->texture;
     pix_t *ds_source;
     pix_t pix = (pix_t)-1;
 
@@ -1022,7 +1022,7 @@ unsigned int R_DrawFloorCeilPoly (pixelShader_t *shader, int x, int y, int u, in
     return 1;
 }
 
-unsigned int R_DrawMaskedPoly (pixelShader_t *shader, int x, int y, int u, int v)
+unsigned int R_DrawMaskedPoly (const pixelShader_t *shader, int x, int y, int u, int v)
 {
     return 0;
 }

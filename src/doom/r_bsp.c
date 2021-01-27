@@ -554,46 +554,50 @@ void R_Subsector (view_t *view, int num)
         I_Error("R_Subsector: solidsegs overflow (vanilla may crash here)\n");
 }
 
-static inline void R_PolyToTexCord (poly3_t *poly, vertex2_t v1, vertex2_t v2, vertex2_t v3)
+static inline void R_PolyToTexCord (Poly3f_t *poly, const Vertex3f_t *v1, const Vertex3f_t *v2, const Vertex3f_t *v3)
 {
-    poly->tv1.x = v1.x;
-    poly->tv1.y = v1.y;
+    poly->t1.x = v1->x;
+    poly->t1.y = v1->y;
 
-    poly->tv2.x = v2.x;
-    poly->tv2.y = v2.y;
+    poly->t2.x = v2->x;
+    poly->t2.y = v2->y;
 
-    poly->tv3.x = v3.x;
-    poly->tv3.y = v3.y;
+    poly->t3.x = v3->x;
+    poly->t3.y = v3->y;
 }
 
-static int R_LineToPoly (seg_t *line, vertex3_t *v, poly3_t poly[2], fixed_t floor, fixed_t height, int texnum)
+static inline void R_FloorPolyToTexCord (Poly3f_t *poly)
+{
+    R_PolyToTexCord(poly, &poly->v1, &poly->v2, &poly->v3);
+}
+
+static int R_LineToPoly (seg_t *line, Vertex3f_t *v, Poly3f_t poly[2], float floor, float height, int texnum)
 {
     float flength = line->linedef->length;
     float fheight = ToFloat(height);
-    const vertex2_t vt[]= {{0, 0}, {flength, 0}, {0, fheight}, {flength, fheight}};
+    const Vertex3f_t vt[]= {{0, 0, 0}, {flength, 0, 0}, {0, fheight, 0}, {flength, fheight, 0}};
     const int cw_dir[] = {0, 1, 2, 2, 1, 3};
-    const int ccw_dir[] = {0, 2, 1, 2, 3, 1};
     const int *dir;
 
     if (!flength || !fheight) {
         return 0;
     }
 
-    v[0].x = line->v1->x;
-    v[0].y = line->v1->y;
-    v[0].z = floor;
+    v[0].x = ToFloat(line->v1->x);
+    v[0].y = ToFloat(line->v1->y);
+    v[0].z = ToFloat(floor);
 
-    v[1].x = line->v2->x;
-    v[1].y = line->v2->y;
-    v[1].z = floor;
+    v[1].x = ToFloat(line->v2->x);
+    v[1].y = ToFloat(line->v2->y);
+    v[1].z = ToFloat(floor);
 
-    v[2].x = line->v1->x;
-    v[2].y = line->v1->y;
-    v[2].z = floor + height;
+    v[2].x = ToFloat(line->v1->x);
+    v[2].y = ToFloat(line->v1->y);
+    v[2].z = ToFloat(floor + height);
 
-    v[3].x = line->v2->x;
-    v[3].y = line->v2->y;
-    v[3].z = floor + height;
+    v[3].x = ToFloat(line->v2->x);
+    v[3].y = ToFloat(line->v2->y);
+    v[3].z = ToFloat(floor + height);
 
     dir = cw_dir;
 
@@ -605,8 +609,8 @@ static int R_LineToPoly (seg_t *line, vertex3_t *v, poly3_t poly[2], fixed_t flo
     poly[1].v2 = v[dir[4]];
     poly[1].v3 = v[dir[5]];
 
-    R_PolyToTexCord(&poly[0], vt[dir[0]], vt[dir[1]], vt[dir[2]]);
-    R_PolyToTexCord(&poly[1], vt[dir[3]], vt[dir[4]], vt[dir[5]]);
+    R_PolyToTexCord(&poly[0], &vt[dir[0]], &vt[dir[1]], &vt[dir[2]]);
+    R_PolyToTexCord(&poly[1], &vt[dir[3]], &vt[dir[4]], &vt[dir[5]]);
 
     poly[0].shader.texture = texnum;
     poly[0].shader.draw = R_DrawSolidPoly;
@@ -619,17 +623,11 @@ static int R_LineToPoly (seg_t *line, vertex3_t *v, poly3_t poly[2], fixed_t flo
 
 #define MAX_LINES (64)
 
-typedef struct vert_node_s {
-    struct vert_node_s *next, *prev;
-    struct vert_node_s *reflex;
-    vertex3_t *v;
-} vert_node_t;
-
 typedef struct bbox_s {
     fixed_t x1, y1, x2, y2;
 } bbox_t;
 
-static void bboxToVert (vertex3_t v[4], bbox_t *bbox)
+void bboxToVert (vertex3_t v[4], bbox_t *bbox)
 {
     v[0].x = bbox->x1;
     v[0].y = bbox->y1;
@@ -644,7 +642,7 @@ static void bboxToVert (vertex3_t v[4], bbox_t *bbox)
     v[3].y = bbox->y2;
 }
 
-static void linesCopy (line_t **dest, line_t **src, int lines_count, bbox_t *bbox)
+static void linesCopy (Vertex3f_t *dest, line_t **src, int lines_count, bbox_t *bbox)
 {
     int i;
     bbox->x1 = src[0]->v1->x;
@@ -653,7 +651,14 @@ static void linesCopy (line_t **dest, line_t **src, int lines_count, bbox_t *bbo
     bbox->y2 = src[0]->v1->y;
 
     for (i = 0; i < lines_count; i++) {
-        dest[i] = src[i];
+        dest->x = ToFloat(src[i]->v1->x);
+        dest->y = ToFloat(src[i]->v1->y);
+        dest->z = 0;
+        dest++;
+        dest->x = ToFloat(src[i]->v2->x);
+        dest->y = ToFloat(src[i]->v2->y);
+        dest->z = 0;
+        dest++;
         if (src[i]->v1->x < bbox->x1) {
             bbox->x1 = src[i]->v1->x;
         }
@@ -682,188 +687,42 @@ static void linesCopy (line_t **dest, line_t **src, int lines_count, bbox_t *bbo
     }
 }
 
-static inline boolean vert2Eq (vertex_t *v1, vertex_t *v2)
-{
-    if (v1->x != v2->x) {
-        return false;
-    }
-    if (v1->y != v2->y) {
-        return false;
-    }
-    return true;
-}
-
-static void linesToVertsSort (line_t **lines, vertex_t *verts, int lines_count)
-{
-    line_t *line;
-    vertex_t *begin = verts;
-    int i, matches = 0, missing = 0;
-    *verts++ = *lines[0]->v2;
-    *verts = *lines[0]->v1;
-    i = 0;
-    while (matches < lines_count-1 && missing < lines_count) {
-        missing++;
-        if (++i >= lines_count) {
-            i = 1;
-        }
-        line = lines[i];
-        if (!line) {
-            continue;
-        }
-
-        if (vert2Eq(verts, line->v1)) {
-            *++verts = *line->v2;
-        } else if (vert2Eq(verts, line->v2)) {
-            *++verts = *line->v1;
-        } else {
-            continue;
-        }
-        lines[i] = NULL;
-        matches++;
-        missing = 0;
-    }
-}
-
-static void lineNodesPrepare (vert_node_t *dest, vertex3_t *verts, int lines_count)
-{
-    int i;
-
-    for (i = 0; i < lines_count-1; i++) {
-        dest[i].next = &dest[i+1];
-        dest[i+1].prev = &dest[i];
-        dest[i].v = verts++;
-    }
-    dest[i].next = &dest[0];
-    dest[0].prev = &dest[i];
-    dest[i].v = verts;
-}
 
 static inline void printVert3 (vertex3_t *v)
 {
     printf("Vert= %d %d %d\n", v->x >> FRACBITS, v->y >> FRACBITS, v->z >> FRACBITS);
 }
 
-static void lineNodesAssign (vert_node_t *dest, vertex_t *verts, int lines_count, fixed_t height)
+static void R_SetupPolys (Poly3f_t *polys, unsigned int poly_cnt, float height, const pixelShader_t *shader)
 {
     int i;
 
-    for (i = 0; i < lines_count; i++) {
-        dest[i].v->x = verts[i].x;
-        dest[i].v->y = verts[i].y;
-        dest[i].v->z = height;
+    for (i = 0; i < poly_cnt; i++) {
+        polys[i].shader = *shader;
+        polys[i].v1.z = height;
+        polys[i].v2.z = height;
+        polys[i].v3.z = height;
+        R_FloorPolyToTexCord(&polys[i]);
     }
 }
 
-static void setupPoly (poly3_t *poly, vertex3_t *v1, vertex3_t *v2, vertex3_t *v3, fixed_t minx, fixed_t miny, int texture)
+static int R_GroupLines (Poly3f_t *polys, line_t **lines, int lines_count, float height, int picnum, boolean isFloor)
 {
-    poly->v1 = *v1;
-    poly->v2 = *v2;
-    poly->v3 = *v3;
-
-    poly->tv1.x = ToFloat(poly->v1.x - minx);
-    poly->tv1.y = ToFloat(poly->v1.y - miny);
-    poly->tv2.x = ToFloat(poly->v2.x - minx);
-    poly->tv2.y = ToFloat(poly->v2.y - miny);
-    poly->tv3.x = ToFloat(poly->v3.x - minx);
-    poly->tv3.y = ToFloat(poly->v3.y - miny);
-
-    poly->shader.texture = texture;
-    poly->shader.draw = R_DrawFloorCeilPoly;
-}
-
-static vert_node_t *vertNodesToReflex (vert_node_t *nodes, int *verts_count)
-{
-    vert_node_t *node = nodes, *first = nodes;
-    vert_node_t *lnode = node->prev, *rnode = node->next;
-    vert_node_t *reflex = NULL;
-    fixed_t cross;
-    vertex_t v2v1, v3v2;
-    int i = 0;
-
-
-    do {
-
-        v2v1.x = node->v->x - lnode->v->x;
-        v2v1.y = node->v->y - lnode->v->y;
-
-        v3v2.x = rnode->v->x - node->v->x;
-        v3v2.y = rnode->v->y - node->v->y;
-
-
-        cross = FixedMul(v2v1.x, v3v2.y) - FixedMul(v2v1.y, v3v2.x);
-        node->reflex = NULL;
-        if (cross > 0) {
-            node->reflex = reflex;
-            reflex = node;
-        }
-        if (cross == 0) {
-            lnode->next = rnode;
-            rnode->prev = lnode;
-            *verts_count--;
-        } else {
-            lnode = node;
-        }
-        node = rnode;
-        rnode = rnode->next;
-        i++;
-    } while (node != first && i < *verts_count);
-    return reflex;
-}
-
-static int lineNodesToPolys (poly3_t *polys, vert_node_t *nodes, int verts_count, fixed_t minx, fixed_t miny, int texture, boolean isFloor)
-{
-    vert_node_t *reflex;
-    int polys_cnt = 0;
-
-
-    while (verts_count >= 3) {
-        reflex = vertNodesToReflex(nodes, &verts_count);
-        if (!reflex) {
-            break;
-        }
-        while (reflex) {
-            if (isFloor)
-                setupPoly(&polys[polys_cnt], reflex->prev->v, reflex->v, reflex->next->v, minx, miny, texture);
-            else
-                setupPoly(&polys[polys_cnt], reflex->next->v, reflex->v, reflex->prev->v, minx, miny, texture);
-            polys_cnt++;
-
-            reflex->prev->next = reflex->next;
-            reflex->next->prev = reflex->prev;
-            verts_count--;
-
-            reflex = reflex->reflex;
-        }
-    }
-    //setupPoly(&polys[polys_cnt], node->v, node->v, rnode->v, minx, miny, texture);
-    //polys_cnt++;
-    return polys_cnt;
-}
-
-static int R_GroupLines (poly3_t *polys, line_t **lines, int lines_count, fixed_t height, int picnum, boolean isFloor)
-{
-    fixed_t minx, miny;
-    line_t *lines_buf[MAX_LINES];
-    vert_node_t nodes[MAX_LINES];
-    vertex3_t verts[MAX_LINES*2];
-    vertex_t verts2[MAX_LINES*2];
+    const pixelShader_t shader = {picnum, R_DrawFloorCeilPoly};
+    Vertex3f_t verts[MAX_LINES*2];
+    unsigned int poly_cnt;
     bbox_t bbox;
-    int i;
 
-    linesCopy(lines_buf, lines, lines_count, &bbox);
-
-    minx = bbox.x1;
-    miny = bbox.y1;
-    linesToVertsSort(lines_buf, verts2, lines_count);
-    lineNodesPrepare(nodes, verts, lines_count);
-    lineNodesAssign(nodes, verts2, lines_count, height);
-
-    return lineNodesToPolys(polys, nodes, lines_count, minx, miny, picnum, isFloor);
+    linesCopy(verts, lines, lines_count, &bbox);
+    poly_cnt = SR_SplitPolygon2D(polys, verts, lines_count * 2);
+    R_SetupPolys(polys, poly_cnt, height, &shader);
+    return poly_cnt;
 }
 
-static int R_FloorToPoly (poly3_t *polys, int isfloor, seg_t *line)
+static int R_FloorToPoly (Poly3f_t *polys, int isfloor, seg_t *line)
 {
-    fixed_t height = isfloor ? line->frontsector->floorheight : line->frontsector->ceilingheight;
+    fixed_t fheight = isfloor ? line->frontsector->floorheight : line->frontsector->ceilingheight;
+    float height = ToFloat(fheight);
     int picnum = isfloor ? line->frontsector->floorpic : line->frontsector->ceilingpic;
     visplane_t *floorplane = R_FindPlane (line->frontsector->floorheight,
             picnum,
@@ -874,14 +733,14 @@ static int R_FloorToPoly (poly3_t *polys, int isfloor, seg_t *line)
     printf("Lines=%d\n", line->frontsector->linecount);
 
     if (line->frontsector->linecount > MAX_LINES) {
-        printf("Lines > 64\n");
+        printf("Lines > %d\n", MAX_LINES);
         return 0;
     }
 
     return R_GroupLines(polys, line->frontsector->lines, line->frontsector->linecount, height, picnum, isfloor);
 }
 
-int R_SegToPoly (vertex3_t *vert, poly3_t *poly, seg_vis_t *seg)
+int R_SegToPoly (Vertex3f_t *vert, Poly3f_t *poly, seg_vis_t *seg)
 {
     seg_t *line = seg->seg;
     fixed_t floor, ceil;
@@ -912,27 +771,21 @@ int R_SegToPoly (vertex3_t *vert, poly3_t *poly, seg_vis_t *seg)
     return pcount;
 }
 
-void R_TransformPoly (Poly3f_t *dest, poly3_t *src, int cnt)
+void R_TransformPoly (Poly3f_t *dest, Poly3f_t *src, int cnt)
 {
-    Vertex3f_t fvert;
     int i;
     for (i = 0; i < cnt; i++) {
 
-        R_VFCopy(&fvert, &src->v1);
-        R_TranslateVert2Dto3D(&dest->v1, &fvert);
+        R_TranslateVert2Dto3D(&dest->v1, &src->v1);
+        R_TranslateVert2Dto3D(&dest->v2, &src->v2);
+        R_TranslateVert2Dto3D(&dest->v3, &src->v3);
 
-        R_VFCopy(&fvert, &src->v2);
-        R_TranslateVert2Dto3D(&dest->v2, &fvert);
-
-        R_VFCopy(&fvert, &src->v3);
-        R_TranslateVert2Dto3D(&dest->v3, &fvert);
-
-        dest->t1.x = src->tv1.x;
-        dest->t1.y = src->tv1.y;
-        dest->t2.x = src->tv2.x;
-        dest->t2.y = src->tv2.y;
-        dest->t3.x = src->tv3.x;
-        dest->t3.y = src->tv3.y;
+        dest->t1.x = src->t1.x;
+        dest->t1.y = src->t1.y;
+        dest->t2.x = src->t2.x;
+        dest->t2.y = src->t2.y;
+        dest->t3.x = src->t3.x;
+        dest->t3.y = src->t3.y;
 
         dest->shader = src->shader;
         dest++;
@@ -955,8 +808,8 @@ void R_RenderWorld (view_t *view)
 {
     int seg_count = sscount, in_poly_cnt = 0, out_poly_cnt = 0;
     seg_vis_t *seg = segs_vis;
-    vertex3_t vert[8];
-    poly3_t polys_in[128];
+    Vertex3f_t vert[8];
+    Poly3f_t polys_in[128];
     Poly3f_t polys_out[2048];
 
     printf("%s() +++ %d\n", __func__, sscount);
@@ -968,6 +821,7 @@ void R_RenderWorld (view_t *view)
         if (!seg->seg->frontsector->r_prepared) {
             in_poly_cnt += R_FloorToPoly(&polys_in[in_poly_cnt], true, seg->seg);
             in_poly_cnt += R_FloorToPoly(&polys_in[in_poly_cnt], false, seg->seg);
+            printf("~~~~~~~~~~~~~~%d\n", in_poly_cnt);
             seg->seg->frontsector->r_prepared = 1;
         }
         printf("%s() : %d\n", __func__, in_poly_cnt);

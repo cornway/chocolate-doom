@@ -31,6 +31,7 @@ SOFTWARE.
 #include "sr.h"
 #include "Renderer.h"
 #include "vector_math.h"
+#include "Polygon2D.h"
 
 
 typedef vmath::vec4<float> vec4f;
@@ -253,6 +254,63 @@ void SR_LoadVert (Poly3f_t *poly, int poly_cnt)
 void SR_Render (void)
 {
     core->Render();
+}
+
+static inline void _CopyVert (Vertex3f_t *out, Polygon2D::Vertex2D *in)
+{
+    out->x = in->x;
+    out->y = in->y;
+    out->z = 0;
+}
+
+int SR_SplitPolygon2D (Poly3f_t *out, Vertex3f_t *in, unsigned int size)
+{
+    Polygon2D poly;
+    std::vector<SubPoly> subPolys;
+    std::vector<Polygon2D::Vertex2D *> verts;
+    int i;
+
+    for (i = 0; i < size; i += 2) {
+        poly.AddEdge(in[i].x, in[i].y, in[i+1].x, in[i+1].y);
+    }
+    poly.PrintEdges();
+    poly.ConnectEdges(verts);
+
+    std::cout << "built verts:\n";
+    for (Polygon2D::Vertex2D *v : verts) {
+        if (v) {
+            v->Print();
+        } else {
+            std::cout << "null vert\n";
+        }
+    }
+    std::cout << "=======\n\n";
+    poly.BuildSubPolys(subPolys, verts);
+
+    std::cout << "SubPolys = " << subPolys.size() << "\n";
+
+    for (SubPoly &p : subPolys) {
+        //p.Print();
+    }
+
+    i = 0;
+    for (SubPoly &p : subPolys) {
+        p.Triangulate();
+
+        std::cout << "SubTriangles = " << p.subPolys().size() << "\n";
+        for (SubPoly &p : p.subPolys()) {
+            p.Print();
+
+            _CopyVert(&out->v1, p[0]);
+            _CopyVert(&out->v2, p[1]);
+            _CopyVert(&out->v3, p[2]);
+            out++;
+            i++;
+        }
+    }
+
+    std::cout << "SR_SplitPolygon2D---\n\n";
+    return i;
 }
 
 

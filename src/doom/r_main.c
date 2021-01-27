@@ -37,6 +37,7 @@
 #include "r_view.h"
 #include "rt_if.h"
 #include "z_zone.h"
+#include "i_system.h"
 
 
 // Fineangles in the SCREENWIDTH wide window.
@@ -877,7 +878,6 @@ void R_SetupFrame (player_t* player)
 //
 void R_RenderPlayerView (player_t* player)
 {	
-    extern int g_use_rt;
     R_SetupFrame (player);
 
     // Clear buffers.
